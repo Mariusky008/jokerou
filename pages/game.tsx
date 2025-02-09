@@ -262,7 +262,7 @@ export default function Game() {
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-gray-900 rounded-2xl p-6 shadow-neon"
+                className="bg-gray-900 rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
               >
                 <div className="flex items-center mb-4">
                   <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-2xl">
@@ -284,17 +284,17 @@ export default function Game() {
                     <div className="text-sm text-gray-400">Taux de victoire</div>
                   </div>
                 </div>
-                <form onSubmit={handleSendPrivateMessage} className="flex gap-2">
+                <form onSubmit={handleSendPrivateMessage} className="flex flex-col gap-2 p-4 bg-gray-800 rounded-lg">
                   <input
                     type="text"
                     value={privateMessage}
                     onChange={(e) => setPrivateMessage(e.target.value)}
                     placeholder="Message privé..."
-                    className="flex-1 bg-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <button
                     type="submit"
-                    className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
                   >
                     Envoyer
                   </button>
@@ -336,17 +336,17 @@ export default function Game() {
                   </div>
                 ))}
               </div>
-              <form onSubmit={handleSendGlobalMessage} className="flex gap-2">
+              <form onSubmit={handleSendGlobalMessage} className="flex flex-col gap-2">
                 <input
                   type="text"
                   value={globalMessage}
                   onChange={(e) => setGlobalMessage(e.target.value)}
                   placeholder="Message global..."
-                  className="flex-1 bg-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <button
                   type="submit"
-                  className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   Envoyer
                 </button>
