@@ -94,9 +94,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <Head>
-        <title>Jokerou - Le jeu de cache-cache urbain révolutionnaire</title>
-        <meta name="description" content="Découvrez Jokerou, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
-        <link rel="icon" href="/favicon.ico" />
+        <title key="title">Jokerou - Le jeu de cache-cache urbain révolutionnaire</title>
+        <meta key="description" name="description" content="Découvrez Jokerou, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
+        <link key="favicon" rel="icon" href="/favicon.ico" />
       </Head>
 
       {/* Modal des règles */}
@@ -116,7 +116,7 @@ export default function Home() {
           >
             <h1 className="text-8xl font-black mb-8">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
-                JOKER
+                Le Grim
               </span>
             </h1>
             <p className="text-3xl font-light text-gray-300 max-w-3xl mx-auto leading-relaxed mb-12">
@@ -124,13 +124,14 @@ export default function Home() {
               <span className="block mt-2 text-xl text-purple-400">Une expérience unique chaque soir à 18h dans votre ville.</span>
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <div className="flex flex-col gap-6 justify-center items-center">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto"
               >
                 <Link href="/auth" 
-                  className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xl py-5 px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50"
+                  className="w-full inline-block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xl py-5 px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-center"
                   onMouseEnter={() => setIsHovering(true)}
                   onMouseLeave={() => setIsHovering(false)}
                 >
@@ -144,7 +145,7 @@ export default function Home() {
                 </Link>
               </motion.div>
               
-              <div className="text-2xl font-bold text-purple-400">
+              <div className="text-2xl font-bold text-purple-400 mt-4">
                 Prochain jeu dans {nextGameTime}
               </div>
             </div>
@@ -281,6 +282,105 @@ export default function Home() {
               <span>📜</span>
               Consulter les règles complètes
             </button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Nouvelle section : Modes de jeu */}
+      <section className="py-20 bg-gradient-to-b from-purple-900/20 to-black">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold mb-4">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
+                Modes de jeu
+              </span>
+            </h2>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+              Jouez en solo ou en équipe, choisissez votre style !
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
+            >
+              <div className="text-4xl mb-6">🎮</div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                Mode Solo
+              </h3>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Vivez l'expérience classique : parcourez la ville en solitaire, utilisez vos pouvoirs et votre stratégie pour échapper aux chasseurs ou traquer le Joker.
+              </p>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Liberté de mouvement totale
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Prise de décision rapide
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Parfait pour les joueurs expérimentés
+                </li>
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
+            >
+              <div className="text-4xl mb-6">👥</div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                Mode Duo Stratégique
+              </h3>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Faites équipe avec un ami ! L'un sur le terrain, l'autre derrière son écran pour une expérience de jeu unique combinant action et stratégie.
+              </p>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Un joueur sur le terrain suit les instructions
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Un stratège à distance analyse la carte et coordonne les actions
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Communication en temps réel pour une meilleure coordination
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Parfait pour combiner réflexion et action
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 text-center"
+          >
+            <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-6 rounded-2xl inline-block backdrop-blur-sm border border-purple-500/20">
+              <p className="text-gray-300">
+                <span className="text-purple-400 font-bold">Conseil : </span>
+                Le mode duo est recommandé pour les nouveaux joueurs, permettant une meilleure prise en main du jeu et des stratégies plus élaborées.
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>

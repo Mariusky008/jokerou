@@ -55,6 +55,7 @@ if (typeof document !== 'undefined') {
 interface MapProps {
   showJoker: boolean;
   onPlayerSelect: (player: any) => void;
+  specialZones?: SpecialZone[];
 }
 
 interface PlayerLocation {
@@ -78,6 +79,17 @@ interface PowerSpot {
   icon: string;
   availableIn: number; // Temps en secondes avant disponibilité
   forRole?: 'joker' | 'hunter' | 'all';
+}
+
+interface SpecialZone {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: 'recharge' | 'cover' | 'surveillance' | 'bonus';
+  isActive: boolean;
+  nextAppearance: number;
+  position?: [number, number];
 }
 
 // Composant pour mettre à jour la position du joueur et la carte
@@ -114,7 +126,7 @@ function LocationUpdater({ onPositionChange }: { onPositionChange: (pos: [number
   return null;
 }
 
-export default function Map({ showJoker, onPlayerSelect }: MapProps) {
+export default function Map({ showJoker, onPlayerSelect, specialZones: initialSpecialZones = [] }: MapProps) {
   const [currentPosition, setCurrentPosition] = useState<[number, number]>([48.8566, 2.3522]);
   const [selectedPlayerForChat, setSelectedPlayerForChat] = useState<PlayerLocation | null>(null);
   const [players, setPlayers] = useState<PlayerLocation[]>([
@@ -217,6 +229,8 @@ export default function Map({ showJoker, onPlayerSelect }: MapProps) {
     }
   ]);
 
+  const [specialZones, setSpecialZones] = useState<SpecialZone[]>(initialSpecialZones);
+
   const handlePositionChange = useCallback((newPosition: [number, number]) => {
     setCurrentPosition(newPosition);
     
@@ -278,11 +292,41 @@ export default function Map({ showJoker, onPlayerSelect }: MapProps) {
     });
   };
 
+  // Créer une icône personnalisée pour les zones spéciales
+  const createSpecialZoneIcon = (zone: SpecialZone) => {
+    const markerHtml = `
+      <div class="special-zone ${zone.type} ${zone.isActive ? 'active' : ''}">
+        <span class="zone-icon">${zone.icon}</span>
+      </div>
+    `;
+
+    return L.divIcon({
+      html: markerHtml,
+      className: 'special-zone-icon',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20]
+    });
+  };
+
   // Zone de jeu
   const gameZone = {
     center: currentPosition,
     radius: 1000 // 1km en mètres
   };
+
+  // Générer des positions aléatoires pour les zones spéciales
+  useEffect(() => {
+    if (initialSpecialZones.length > 0) {
+      setSpecialZones(initialSpecialZones.map(zone => ({
+        ...zone,
+        position: zone.position || [
+          currentPosition[0] + (Math.random() - 0.5) * 0.005,
+          currentPosition[1] + (Math.random() - 0.5) * 0.005
+        ]
+      })));
+    }
+  }, [currentPosition, initialSpecialZones]);
 
   return (
     <div className="h-[600px] rounded-2xl overflow-hidden relative">
@@ -463,6 +507,28 @@ export default function Map({ showJoker, onPlayerSelect }: MapProps) {
           </Marker>
         ))}
 
+        {/* Zones spéciales */}
+        {specialZones.map((zone) => (
+          zone.isActive && zone.position && (
+            <Marker
+              key={zone.id}
+              position={zone.position}
+              icon={createSpecialZoneIcon(zone)}
+            >
+              <Popup>
+                <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
+                  <div className="text-2xl mb-2">{zone.icon}</div>
+                  <div className="font-bold text-white mb-1">{zone.name}</div>
+                  <div className="text-sm text-gray-300 mb-2">{zone.description}</div>
+                  <div className="text-xs text-purple-400">
+                    Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          )
+        ))}
+
         {/* Contrôles de zoom personnalisés */}
         <div className="absolute right-4 bottom-4 flex flex-col gap-2 z-[1000]">
           <button 
@@ -602,6 +668,58 @@ export default function Map({ showJoker, onPlayerSelect }: MapProps) {
         }
 
         @keyframes powerPulse {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+          }
+          70% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+          }
+        }
+
+        /* Styles pour les zones spéciales */
+        .special-zone {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: rgba(26, 26, 26, 0.9);
+          border: 2px solid white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
+        .special-zone.active {
+          animation: zonePulse 2s infinite;
+        }
+
+        .special-zone.recharge {
+          background: linear-gradient(45deg, #8b5cf6, #ec4899);
+        }
+
+        .special-zone.cover {
+          background: linear-gradient(45deg, #10b981, #3b82f6);
+        }
+
+        .special-zone.surveillance {
+          background: linear-gradient(45deg, #f59e0b, #ef4444);
+        }
+
+        .special-zone.bonus {
+          background: linear-gradient(45deg, #fbbf24, #f59e0b);
+        }
+
+        .zone-icon {
+          font-size: 20px;
+        }
+
+        @keyframes zonePulse {
           0% {
             transform: scale(1);
             box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);

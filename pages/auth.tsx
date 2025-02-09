@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,11 +12,14 @@ export default function Auth() {
     username: '',
     city: ''
   });
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implémenter la logique d'authentification
     console.log('Form submitted:', formData);
+    // Redirection vers la page des chasses après authentification
+    router.push('/hunts');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

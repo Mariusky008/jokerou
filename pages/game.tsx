@@ -22,6 +22,16 @@ interface Power {
   remainingUses: number;
 }
 
+interface SpecialZone {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: 'recharge' | 'cover' | 'surveillance' | 'bonus';
+  isActive: boolean;
+  nextAppearance: number; // Temps en secondes avant la prochaine apparition
+}
+
 interface Message {
   id: string;
   author: string;
@@ -76,6 +86,45 @@ export default function Game() {
     }
   ]);
 
+  const [specialZones, setSpecialZones] = useState<SpecialZone[]>([
+    {
+      id: 'recharge1',
+      name: 'Station de recharge',
+      description: 'Recharge instantanément vos pouvoirs spéciaux',
+      icon: '⚡',
+      type: 'recharge',
+      isActive: false,
+      nextAppearance: 300 // 5 minutes
+    },
+    {
+      id: 'cover1',
+      name: 'Zone de couverture',
+      description: 'Meilleure dissimulation pour le Joker',
+      icon: '🌫️',
+      type: 'cover',
+      isActive: false,
+      nextAppearance: 300
+    },
+    {
+      id: 'surveillance1',
+      name: 'Point de surveillance',
+      description: 'Position avantageuse pour les chasseurs',
+      icon: '👁️',
+      type: 'surveillance',
+      isActive: false,
+      nextAppearance: 300
+    },
+    {
+      id: 'bonus1',
+      name: 'Zone bonus',
+      description: '+200 XP pour tous les joueurs dans la zone',
+      icon: '⭐',
+      type: 'bonus',
+      isActive: false,
+      nextAppearance: 300
+    }
+  ]);
+
   useEffect(() => {
     // Timer pour le jeu et les cooldowns
     const timer = setInterval(() => {
@@ -115,6 +164,37 @@ export default function Game() {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    // Timer pour les zones spéciales
+    const zoneTimer = setInterval(() => {
+      setSpecialZones(prev => prev.map(zone => {
+        if (zone.nextAppearance <= 0) {
+          // Si le temps est écoulé, activer la zone pour 1 minute
+          if (!zone.isActive) {
+            return {
+              ...zone,
+              isActive: true,
+              nextAppearance: 60 // 1 minute d'activation
+            };
+          } else {
+            // Après 1 minute d'activation, désactiver et réinitialiser le timer
+            return {
+              ...zone,
+              isActive: false,
+              nextAppearance: 300 // 5 minutes avant la prochaine apparition
+            };
+          }
+        }
+        return {
+          ...zone,
+          nextAppearance: zone.nextAppearance - 1
+        };
+      }));
+    }, 1000);
+
+    return () => clearInterval(zoneTimer);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -209,7 +289,11 @@ export default function Game() {
               transition={{ delay: 0.2 }}
               className="mb-8"
             >
-              <MapComponent showJoker={showJoker} onPlayerSelect={setSelectedPlayer} />
+              <MapComponent 
+                showJoker={showJoker} 
+                onPlayerSelect={setSelectedPlayer}
+                specialZones={specialZones}
+              />
             </motion.div>
 
             {/* Pouvoirs */}
@@ -252,6 +336,48 @@ export default function Game() {
                   </div>
                 </button>
               ))}
+            </motion.div>
+
+            {/* Nouvelle section : Zones spéciales */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="mt-8"
+            >
+              <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                Zones spéciales
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                {specialZones.map((zone) => (
+                  <div
+                    key={zone.id}
+                    className={`bg-gray-900 p-4 rounded-xl flex items-center ${
+                      zone.isActive ? 'ring-2 ring-purple-500' : ''
+                    }`}
+                  >
+                    <div className={`w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-2xl ${
+                      zone.isActive ? 'animate-pulse' : 'opacity-50'
+                    }`}>
+                      {zone.icon}
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <h3 className="font-bold">{zone.name}</h3>
+                      <p className="text-sm text-gray-400">{zone.description}</p>
+                      {!zone.isActive && (
+                        <div className="text-sm text-purple-400">
+                          Apparaît dans: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                        </div>
+                      )}
+                      {zone.isActive && (
+                        <div className="text-sm text-green-400">
+                          Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           </div>
 
