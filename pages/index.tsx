@@ -276,7 +276,7 @@ export default function Home() {
           >
             <button
               onClick={() => setShowRules(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xl py-5 px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-3 mx-auto"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-lg py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2 mx-auto"
             >
               <span>📜</span>
               Consulter les règles complètes
