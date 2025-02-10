@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -142,11 +143,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
-      <Head>
-        <title key="title">Jokerou - Le jeu de cache-cache urbain révolutionnaire</title>
-        <meta key="description" name="description" content="Découvrez Jokerou, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
-        <link key="favicon" rel="icon" href="/favicon.ico" />
-      </Head>
+    <Head key="head">
+      <title key="title">Jokerou - Le jeu de cache-cache urbain révolutionnaire</title>
+      <meta key="description" name="description" content="Découvrez Jokerou, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
+      <link key="favicon" rel="icon" href="/favicon.ico" />
+    </Head>
 
       {/* Modal des règles */}
       <GameRules isOpen={showRules} onClose={() => setShowRules(false)} />
