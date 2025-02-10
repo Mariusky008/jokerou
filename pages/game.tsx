@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
@@ -30,6 +30,7 @@ interface SpecialZone {
   type: 'recharge' | 'cover' | 'surveillance' | 'bonus';
   isActive: boolean;
   nextAppearance: number; // Temps en secondes avant la prochaine apparition
+  position?: [number, number];
 }
 
 interface Message {
@@ -66,6 +67,7 @@ export default function Game() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [showJoker, setShowJoker] = useState(true);
   const chatRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [powers, setPowers] = useState<Power[]>([
     {
@@ -125,6 +127,32 @@ export default function Game() {
     }
   ]);
 
+  // Initialiser le son au chargement
+  useEffect(() => {
+    const loadAudio = async () => {
+      if (!audioRef.current) {
+        audioRef.current = new Audio('/sounds/zone-activation.mp3');
+        audioRef.current.volume = 0.5;
+        try {
+          await audioRef.current.load();
+        } catch (error) {
+          console.error('Erreur de chargement audio:', error);
+        }
+      }
+    };
+    loadAudio();
+  }, []);
+
+  // Fonction pour jouer le son
+  const playZoneActivationSound = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(error => {
+        console.error('Erreur de lecture audio:', error);
+      });
+    }
+  }, []);
+
   useEffect(() => {
     // Timer pour le jeu et les cooldowns
     const timer = setInterval(() => {
@@ -165,24 +193,29 @@ export default function Game() {
     }
   }, [messages]);
 
+  // Timer pour les zones spéciales
   useEffect(() => {
-    // Timer pour les zones spéciales
     const zoneTimer = setInterval(() => {
       setSpecialZones(prev => prev.map(zone => {
         if (zone.nextAppearance <= 0) {
-          // Si le temps est écoulé, activer la zone pour 1 minute
           if (!zone.isActive) {
+            playZoneActivationSound();
+            // Ajouter une position aléatoire si elle n'existe pas
+            const newPosition = zone.position || [
+              48.8566 + (Math.random() - 0.5) * 0.01,
+              2.3522 + (Math.random() - 0.5) * 0.01
+            ];
             return {
               ...zone,
               isActive: true,
-              nextAppearance: 60 // 1 minute d'activation
+              nextAppearance: 60,
+              position: newPosition
             };
           } else {
-            // Après 1 minute d'activation, désactiver et réinitialiser le timer
             return {
               ...zone,
               isActive: false,
-              nextAppearance: 300 // 5 minutes avant la prochaine apparition
+              nextAppearance: 300
             };
           }
         }
@@ -194,7 +227,7 @@ export default function Game() {
     }, 1000);
 
     return () => clearInterval(zoneTimer);
-  }, []);
+  }, [playZoneActivationSound]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -253,6 +286,12 @@ export default function Game() {
         <title>En Jeu - Jokerou</title>
       </Head>
 
+      {/* Élément audio avec preload */}
+      <audio ref={audioRef} preload="auto">
+        <source src="/sounds/zone-activation.mp3" type="audio/mpeg" />
+        <source src="/sounds/zone-activation.wav" type="audio/wav" />
+      </audio>
+
       <div className="container mx-auto px-4 py-8">
         {/* En-tête du jeu */}
         <motion.div
@@ -303,79 +342,175 @@ export default function Game() {
               transition={{ delay: 0.4 }}
               className="grid grid-cols-2 gap-4"
             >
-              {powers.map((power) => (
-                <button
+              {powers.map((power, index) => (
+                <motion.button
                   key={power.id}
                   onClick={() => usePower(power.id)}
                   disabled={power.remainingUses === 0 || power.cooldown > 0}
-                  className={`bg-gray-900 p-4 rounded-xl flex items-center ${
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + index * 0.1 }}
+                  className={`relative bg-gradient-to-br from-gray-900 via-purple-900/30 to-gray-900 p-6 rounded-xl flex items-center transform transition-all duration-300 ${
                     power.remainingUses === 0
                       ? 'opacity-50 cursor-not-allowed'
                       : power.cooldown > 0
                       ? 'opacity-75 cursor-wait'
-                      : 'hover:bg-gray-800'
-                  }`}
+                      : 'hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] hover:from-gray-800 hover:via-purple-900/40 hover:to-gray-800'
+                  } border border-purple-500/20`}
                 >
-                  <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-2xl">
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-3xl transform transition-all duration-500 ${
+                    power.cooldown > 0 ? 'animate-pulse grayscale' : 'hover:scale-110'
+                  }`}>
                     {power.icon}
                   </div>
-                  <div className="ml-4 flex-1">
-                    <h3 className="font-bold">{power.name}</h3>
-                    <p className="text-sm text-gray-400">{power.description}</p>
+                  <div className="ml-4 flex-1 text-left">
+                    <h3 className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                      {power.name}
+                    </h3>
+                    <p className="text-sm text-gray-400 mt-1">{power.description}</p>
                     {power.cooldown > 0 && (
-                      <div className="text-sm text-purple-400">
-                        Cooldown: {power.cooldown}s
-                      </div>
+                      <motion.div 
+                        initial={{ width: '100%' }}
+                        animate={{ width: '0%' }}
+                        transition={{ duration: power.cooldown, ease: 'linear' }}
+                        className="h-1 bg-purple-500/50 rounded-full mt-2"
+                      />
                     )}
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-gray-400">
-                      Utilisations restantes
+                      Utilisations
                     </div>
-                    <div className="text-xl font-bold">{power.remainingUses}</div>
+                    <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                      {power.remainingUses}
+                    </div>
                   </div>
-                </button>
+                  {power.cooldown > 0 && (
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-sm font-bold animate-bounce">
+                      {power.cooldown}s
+                    </div>
+                  )}
+                </motion.button>
               ))}
             </motion.div>
 
-            {/* Nouvelle section : Zones spéciales */}
+            {/* Zones spéciales */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
               className="mt-8"
             >
-              <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+              <motion.h2 
+                initial={{ x: -20 }}
+                animate={{ x: 0 }}
+                className="text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text flex items-center gap-3"
+              >
+                <motion.span
+                  animate={{ rotate: [0, -10, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="text-4xl"
+                >
+                  🎯
+                </motion.span>
                 Zones spéciales
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                {specialZones.map((zone) => (
-                  <div
+              </motion.h2>
+
+              <div className="grid grid-cols-2 gap-8">
+                {specialZones.map((zone, index) => (
+                  <motion.div
                     key={zone.id}
-                    className={`bg-gray-900 p-4 rounded-xl flex items-center ${
-                      zone.isActive ? 'ring-2 ring-purple-500' : ''
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 + index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                    className={`relative overflow-hidden bg-gradient-to-br p-6 rounded-xl transform transition-all duration-300 ${
+                      zone.isActive 
+                        ? 'from-purple-900/50 to-pink-900/50 ring-2 ring-purple-500 shadow-[0_0_50px_rgba(139,92,246,0.3)]'
+                        : 'from-gray-900 to-gray-800 border border-purple-500/20'
                     }`}
                   >
-                    <div className={`w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-2xl ${
-                      zone.isActive ? 'animate-pulse' : 'opacity-50'
-                    }`}>
-                      {zone.icon}
+                    {zone.isActive && (
+                      <>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ 
+                            opacity: [0.1, 0.3, 0.1],
+                            scale: [1, 1.2, 1],
+                            rotate: [0, 90, 180, 270, 360]
+                          }}
+                          transition={{ duration: 3, repeat: Infinity }}
+                          className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-purple-600/20"
+                        />
+                        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20 animate-pulse" />
+                      </>
+                    )}
+
+                    <div className="relative flex items-start gap-6">
+                      <motion.div
+                        animate={zone.isActive ? {
+                          scale: [1, 1.2, 1],
+                          rotate: [0, 10, -10, 0],
+                          y: [0, -5, 0]
+                        } : {}}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className={`w-20 h-20 rounded-2xl flex items-center justify-center text-4xl transform transition-all duration-500 ${
+                          zone.isActive
+                            ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50'
+                            : 'bg-gradient-to-br from-gray-700 to-gray-600 opacity-50'
+                        }`}
+                      >
+                        {zone.icon}
+                      </motion.div>
+
+                      <div className="flex-1 space-y-3">
+                        <motion.h3 
+                          animate={zone.isActive ? { scale: [1, 1.05, 1] } : {}}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text"
+                        >
+                          {zone.name}
+                        </motion.h3>
+                        <p className="text-base text-gray-300">{zone.description}</p>
+
+                        {zone.isActive ? (
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="relative flex h-4 w-4">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+                            </span>
+                            <motion.span 
+                              animate={{ opacity: [1, 0.5, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                              className="text-green-400 font-bold"
+                            >
+                              ACTIVE • {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                            </motion.span>
+                          </div>
+                        ) : (
+                          <div className="relative pt-4">
+                            <motion.div 
+                              initial={{ width: '100%' }}
+                              animate={{ width: '0%' }}
+                              transition={{ duration: zone.nextAppearance, ease: 'linear' }}
+                              className="h-2 bg-purple-500/30 rounded-full overflow-hidden"
+                            >
+                              <motion.div
+                                animate={{ x: ['-100%', '100%'] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="h-full w-1/3 bg-gradient-to-r from-transparent via-purple-500 to-transparent"
+                              />
+                            </motion.div>
+                            <div className="absolute top-0 right-0 text-sm text-purple-400 font-bold">
+                              {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="ml-4 flex-1">
-                      <h3 className="font-bold">{zone.name}</h3>
-                      <p className="text-sm text-gray-400">{zone.description}</p>
-                      {!zone.isActive && (
-                        <div className="text-sm text-purple-400">
-                          Apparaît dans: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
-                        </div>
-                      )}
-                      {zone.isActive && (
-                        <div className="text-sm text-green-400">
-                          Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>

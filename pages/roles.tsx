@@ -83,10 +83,10 @@ export default function Roles() {
               role: index === 0 ? randomRole : 'hunter'
             }))
           );
-          // Rediriger vers la page de jeu après 10 secondes
+          // Rediriger vers la page de jeu après 45 secondes
           setTimeout(() => {
             router.push('/game');
-          }, 10000);
+          }, 45000);
           return 0;
         }
         return prev - 1;
