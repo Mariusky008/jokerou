@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PlayerMessages from './PlayerMessages';
+import { motion } from 'framer-motion';
 
 // Styles CSS pour les marqueurs Leaflet
 const markerStyle = `
@@ -42,6 +43,29 @@ const markerStyle = `
     padding: 0px 4px;
     border-radius: 8px;
     color: white;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(1.2);
+    }
+    100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+  }
+
+  .special-zone {
+    transition: all 0.3s ease;
+  }
+
+  .special-zone.active .zone-icon {
+    transform: none !important;
   }
 `;
 
@@ -97,34 +121,113 @@ function LocationUpdater({ onPositionChange }: { onPositionChange: (pos: [number
   const map = useMap();
 
   useEffect(() => {
-    let watchId: number;
-
-    if (navigator.geolocation) {
-      // Suivre la position en temps réel
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const newPos: [number, number] = [position.coords.latitude, position.coords.longitude];
-          map.setView(newPos, map.getZoom());
-          onPositionChange(newPos);
-        },
-        (error) => {
-          console.error('Erreur de géolocalisation:', error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        }
-      );
-    }
-
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+    // Options de configuration pour la géolocalisation
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,        // 10 secondes de timeout
+      maximumAge: 0         // Toujours obtenir une position fraîche
     };
-  }, [map, onPositionChange]);
+
+    // Gestionnaire de succès
+    const successHandler = (position: GeolocationPosition) => {
+      const { latitude, longitude } = position.coords;
+      onPositionChange([latitude, longitude]);
+    };
+
+    // Gestionnaire d'erreur amélioré
+    const errorHandler = (error: GeolocationPositionError) => {
+      let errorMessage = '';
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = 'L\'accès à la géolocalisation a été refusé';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'La position n\'est pas disponible';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'La demande de géolocalisation a expiré';
+          // En cas de timeout, on utilise une position par défaut
+          onPositionChange([48.8566, 2.3522]); // Position par défaut : Paris
+          break;
+        default:
+          errorMessage = 'Une erreur inconnue est survenue';
+      }
+      console.error('Erreur de géolocalisation:', errorMessage);
+    };
+
+    // Démarrer le suivi de position
+    const watchId = navigator.geolocation.watchPosition(
+      successHandler,
+      errorHandler,
+      options
+    );
+
+    // Nettoyage
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [onPositionChange]);
 
   return null;
 }
+
+// Ajouter ce nouveau composant pour les contrôles de zoom
+function ZoomControl() {
+  const map = useMap();
+  
+  return (
+    <div className="absolute right-4 bottom-4 flex flex-col gap-2 z-[1000]">
+      <button 
+        onClick={() => map.zoomIn()}
+        className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
+        +
+      </button>
+      <button 
+        onClick={() => map.zoomOut()}
+        className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
+        -
+      </button>
+    </div>
+  );
+}
+
+// Modifier la création des icônes personnalisées
+const createCustomIcon = (player: PlayerLocation) => {
+  const markerHtml = `
+    <div class="marker-pin ${player.role === 'joker' ? 'joker' : 'hunter'}">
+      <span class="marker-avatar">${player.avatar}</span>
+      <span class="marker-level">Niv.${player.level}</span>
+    </div>
+  `;
+
+  return L.divIcon({
+    html: markerHtml,
+    className: 'custom-div-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+  });
+};
+
+// Créer une icône personnalisée pour les power spots
+const createPowerSpotIcon = (spot: PowerSpot) => {
+  const markerHtml = `
+    <div class="power-spot ${spot.availableIn > 0 ? 'cooldown' : ''} ${spot.type}">
+      <span class="power-icon">${spot.icon}</span>
+      ${spot.availableIn > 0 ? `<span class="cooldown-timer">${Math.floor(spot.availableIn / 60)}:${(spot.availableIn % 60).toString().padStart(2, '0')}</span>` : ''}
+    </div>
+  `;
+
+  return L.divIcon({
+    html: markerHtml,
+    className: 'power-spot-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+  });
+};
 
 export default function Map({ showJoker, onPlayerSelect, specialZones: initialSpecialZones = [] }: MapProps) {
   const [currentPosition, setCurrentPosition] = useState<[number, number]>([48.8566, 2.3522]);
@@ -230,6 +333,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
   ]);
 
   const [specialZones, setSpecialZones] = useState<SpecialZone[]>(initialSpecialZones);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handlePositionChange = useCallback((newPosition: [number, number]) => {
     setCurrentPosition(newPosition);
@@ -256,58 +360,97 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
     return () => clearInterval(timer);
   }, []);
 
-  // Modifier la création des icônes personnalisées
-  const createCustomIcon = (player: PlayerLocation) => {
-    const markerHtml = `
-      <div class="marker-pin ${player.role === 'joker' ? 'joker' : 'hunter'}">
-        <span class="marker-avatar">${player.avatar}</span>
-        <span class="marker-level">Niv.${player.level}</span>
-      </div>
-    `;
-
-    return L.divIcon({
-      html: markerHtml,
-      className: 'custom-div-icon',
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-      popupAnchor: [0, -20]
-    });
-  };
-
-  // Créer une icône personnalisée pour les power spots
-  const createPowerSpotIcon = (spot: PowerSpot) => {
-    const markerHtml = `
-      <div class="power-spot ${spot.availableIn > 0 ? 'cooldown' : ''} ${spot.type}">
-        <span class="power-icon">${spot.icon}</span>
-        ${spot.availableIn > 0 ? `<span class="cooldown-timer">${Math.floor(spot.availableIn / 60)}:${(spot.availableIn % 60).toString().padStart(2, '0')}</span>` : ''}
-      </div>
-    `;
-
-    return L.divIcon({
-      html: markerHtml,
-      className: 'power-spot-icon',
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-      popupAnchor: [0, -20]
-    });
-  };
-
-  // Créer une icône personnalisée pour les zones spéciales
+  // Mettre à jour la création des icônes de zones spéciales
   const createSpecialZoneIcon = (zone: SpecialZone) => {
-    const markerHtml = `
-      <div class="special-zone ${zone.type} ${zone.isActive ? 'active' : ''}">
-        <span class="zone-icon">${zone.icon}</span>
-      </div>
-    `;
-
-    return L.divIcon({
-      html: markerHtml,
+    return new L.DivIcon({
       className: 'special-zone-icon',
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-      popupAnchor: [0, -20]
+      html: `<div class="special-zone-marker ${zone.isActive ? 'active' : ''}">${zone.icon}</div>`,
+      iconSize: zone.isActive ? [100, 100] : [80, 80],
+      iconAnchor: zone.isActive ? [50, 50] : [40, 40],
+      popupAnchor: [0, zone.isActive ? -50 : -40]
     });
   };
+
+  // Gérer le chargement du son
+  useEffect(() => {
+    const loadAudio = async () => {
+      try {
+        if (!audioRef.current) {
+          audioRef.current = new Audio('/sounds/zone-activation.mp3');
+          audioRef.current.volume = 0.5;
+          
+          // Ajouter des gestionnaires d'événements pour mieux gérer le chargement
+          audioRef.current.addEventListener('canplaythrough', () => {
+            console.log('Audio chargé avec succès');
+          });
+          
+          audioRef.current.addEventListener('error', (e) => {
+            console.error('Erreur lors du chargement de l\'audio:', e);
+          });
+          
+          await audioRef.current.load();
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'audio:', error);
+      }
+    };
+    loadAudio();
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Gérer les zones spéciales
+  useEffect(() => {
+    if (initialSpecialZones.length > 0) {
+      setSpecialZones(prevZones => {
+        return initialSpecialZones.map(zone => {
+          const existingZone = prevZones.find(z => z.id === zone.id);
+          
+          // Si la zone devient active
+          if (zone.isActive && (!existingZone || !existingZone.isActive)) {
+            // Jouer le son
+            if (audioRef.current) {
+              audioRef.current.currentTime = 0;
+              audioRef.current.play().catch(error => {
+                console.error('Erreur de lecture audio:', error);
+              });
+            }
+
+            // Créer une notification
+            const notification = document.createElement('div');
+            notification.className = 'zone-notification';
+            notification.innerHTML = `
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">${zone.icon}</span>
+                <div>
+                  <div class="font-bold">${zone.name}</div>
+                  <div class="text-sm opacity-80">Zone spéciale activée !</div>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+          }
+
+          // Générer une position si nécessaire
+          const position = existingZone?.position || [
+            currentPosition[0] + (Math.random() - 0.5) * 0.005,
+            currentPosition[1] + (Math.random() - 0.5) * 0.005
+          ];
+
+          return {
+            ...zone,
+            position
+          };
+        });
+      });
+    }
+  }, [initialSpecialZones, currentPosition]);
 
   // Zone de jeu
   const gameZone = {
@@ -315,158 +458,69 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
     radius: 1000 // 1km en mètres
   };
 
-  // Générer des positions aléatoires pour les zones spéciales
-  useEffect(() => {
-    if (initialSpecialZones.length > 0) {
-      setSpecialZones(initialSpecialZones.map(zone => ({
-        ...zone,
-        position: zone.position || [
-          currentPosition[0] + (Math.random() - 0.5) * 0.005,
-          currentPosition[1] + (Math.random() - 0.5) * 0.005
-        ]
-      })));
-    }
-  }, [currentPosition, initialSpecialZones]);
-
   return (
     <div className="h-[600px] rounded-2xl overflow-hidden relative">
       <MapContainer
         center={currentPosition}
         zoom={16}
-        className="h-full w-full"
-        style={{ background: '#1a1a1a' }}
-        zoomControl={false} // Désactiver les contrôles de zoom par défaut
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={false}
       >
-        <LocationUpdater onPositionChange={handlePositionChange} />
-        
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          className="map-tiles"
         />
         
-        {/* Zone de jeu */}
-        <Circle
-          center={gameZone.center}
-          radius={gameZone.radius}
-          pathOptions={{
-            color: '#8b5cf6',
-            fillColor: '#8b5cf680',
-            fillOpacity: 0.2,
-            weight: 2
-          }}
-        />
-
-        {/* Marqueur de votre position */}
-        <Marker
-          position={currentPosition}
-          icon={createCustomIcon({
-            id: 'you',
-            name: 'Vous',
-            avatar: '📍',
-            position: currentPosition,
-            role: 'hunter',
-            isReady: true,
-            level: 1,
-            gamesPlayed: 0,
-            winRate: 0
-          })}
-        >
-          <Popup>
-            <div className="text-center bg-gray-900 p-3 rounded-lg">
-              <div className="text-2xl mb-2">📍</div>
-              <div className="font-bold text-white">Votre position</div>
-            </div>
-          </Popup>
-        </Marker>
-
-        {/* Marqueurs des autres joueurs */}
-        {players.map((player) => {
-          if (player.role === 'joker' && !showJoker) return null;
-
-          return (
+        <ZoomControl />
+        
+        {/* Rendu des zones spéciales */}
+        {specialZones.map((zone) => (
+          zone.position && (
             <Marker
-              key={player.id}
-              position={player.position}
-              icon={createCustomIcon(player)}
-              eventHandlers={{
-                click: () => {
-                  onPlayerSelect({
-                    id: player.id,
-                    name: player.name,
-                    avatar: player.avatar,
-                    role: player.role,
-                    description: `${player.role === 'joker' ? 'Joker' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
-                    stats: {
-                      gamesPlayed: player.gamesPlayed,
-                      winRate: player.winRate,
-                      level: player.level,
-                      xp: player.level * 1000
-                    }
-                  });
-                }
-              }}
+              key={zone.id}
+              position={zone.position}
+              icon={createSpecialZoneIcon(zone)}
             >
               <Popup>
-                <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[250px]">
+                <div className="bg-gray-900 p-4 rounded-lg min-w-[200px]">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
-                      {player.avatar}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${
+                      zone.isActive 
+                        ? 'bg-gradient-to-br from-purple-600 to-pink-600' 
+                        : 'bg-gray-800'
+                    }`}>
+                      {zone.icon}
                     </div>
-                    <div className="text-left">
-                      <div className="font-bold text-white text-lg">{player.name}</div>
-                      <div className="text-purple-400">Niveau {player.level}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-gray-800 p-2 rounded">
-                      <div className="text-sm text-gray-400">Parties</div>
-                      <div className="font-bold">{player.gamesPlayed}</div>
-                    </div>
-                    <div className="bg-gray-800 p-2 rounded">
-                      <div className="text-sm text-gray-400">Victoires</div>
-                      <div className="font-bold">{player.winRate}%</div>
+                    <div>
+                      <h3 className="font-bold text-lg bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                        {zone.name}
+                      </h3>
+                      {zone.isActive && (
+                        <span className="text-green-400 text-sm">Active</span>
+                      )}
                     </div>
                   </div>
-
-                  <div className="text-sm text-gray-300 mb-3">
-                    {player.role === 'joker' ? 'Joker' : 'Chasseur'} expérimenté
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => onPlayerSelect({
-                        id: player.id,
-                        name: player.name,
-                        avatar: player.avatar,
-                        role: player.role,
-                        description: `${player.role === 'joker' ? 'Joker' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
-                        stats: {
-                          gamesPlayed: player.gamesPlayed,
-                          winRate: player.winRate,
-                          level: player.level,
-                          xp: player.level * 1000
-                        }
-                      })}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors w-full"
-                    >
-                      Voir profil complet
-                    </button>
-                    <button 
-                      onClick={() => setSelectedPlayerForChat(player)}
-                      className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600 transition-colors w-full"
-                    >
-                      Message privé
-                    </button>
-                  </div>
+                  <p className="text-gray-300 text-sm mb-2">{zone.description}</p>
+                  {zone.isActive ? (
+                    <div className="flex items-center gap-2 text-sm text-green-400">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                      </span>
+                      Zone active pour {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-400">
+                      Prochaine activation dans {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                    </div>
+                  )}
                 </div>
               </Popup>
             </Marker>
-          );
-        })}
+          )
+        ))}
 
-        {/* Points d'intérêt */}
+        {/* Rendu des power spots */}
         {powerSpots.map((spot) => (
           <Marker
             key={spot.id}
@@ -474,76 +528,72 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
             icon={createPowerSpotIcon(spot)}
           >
             <Popup>
-              <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
-                <div className="text-2xl mb-2">{spot.icon}</div>
-                <div className="font-bold text-white mb-1">{spot.name}</div>
-                <div className="text-sm text-gray-300 mb-2">{spot.description}</div>
-                {spot.forRole !== 'all' && (
-                  <div className="text-xs text-purple-400 mb-2">
-                    Exclusif {spot.forRole === 'joker' ? 'au Joker' : 'aux Chasseurs'}
-                  </div>
-                )}
+              <div className="bg-gray-900 p-3 rounded-lg">
+                <h3 className="text-lg font-bold text-purple-400">{spot.name}</h3>
+                <p className="text-sm text-gray-300">{spot.description}</p>
                 {spot.availableIn > 0 ? (
-                  <div className="text-sm text-gray-400">
-                    Disponible dans {Math.floor(spot.availableIn / 60)}:{(spot.availableIn % 60).toString().padStart(2, '0')}
+                  <div className="mt-2 text-yellow-400 text-sm">
+                    Disponible dans {spot.availableIn}s
                   </div>
                 ) : (
-                  <button 
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors w-full"
-                    onClick={() => {
-                      // Logique pour activer le power-up
-                      setPowerSpots(prev => prev.map(s => 
-                        s.id === spot.id 
-                          ? { ...s, availableIn: s.type === 'bonus' ? 300 : 600 }
-                          : s
-                      ));
-                    }}
-                  >
-                    Activer
-                  </button>
+                  <div className="mt-2 text-green-400 text-sm">
+                    Disponible maintenant !
+                  </div>
                 )}
               </div>
             </Popup>
           </Marker>
         ))}
 
-        {/* Zones spéciales */}
-        {specialZones.map((zone) => (
-          zone.isActive && zone.position && (
-            <Marker
-              key={zone.id}
-              position={zone.position}
-              icon={createSpecialZoneIcon(zone)}
-            >
-              <Popup>
-                <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
-                  <div className="text-2xl mb-2">{zone.icon}</div>
-                  <div className="font-bold text-white mb-1">{zone.name}</div>
-                  <div className="text-sm text-gray-300 mb-2">{zone.description}</div>
-                  <div className="text-xs text-purple-400">
-                    Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+        {/* Rendu des joueurs */}
+        {players.map((player) => (
+          <Marker
+            key={player.id}
+            position={player.position}
+            icon={createCustomIcon(player)}
+          >
+            <Popup>
+              <div className="bg-gray-900 p-4 rounded-lg shadow-lg min-w-[200px]">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                    player.role === 'joker' ? 'bg-gradient-to-br from-purple-600 to-pink-600' : 'bg-gradient-to-br from-blue-600 to-green-600'
+                  }`}>
+                    {player.avatar}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                      {player.name}
+                    </h3>
+                    <p className="text-sm text-purple-400">Niveau {player.level}</p>
                   </div>
                 </div>
-              </Popup>
-            </Marker>
-          )
+
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="bg-gray-800 p-2 rounded-lg text-center">
+                    <p className="text-sm text-gray-400">Parties</p>
+                    <p className="text-lg font-bold text-white">{player.gamesPlayed}</p>
+                  </div>
+                  <div className="bg-gray-800 p-2 rounded-lg text-center">
+                    <p className="text-sm text-gray-400">Victoires</p>
+                    <p className="text-lg font-bold text-white">{player.winRate}%</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setSelectedPlayerForChat(player);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <span>💬</span>
+                  Envoyer un message
+                </button>
+              </div>
+            </Popup>
+          </Marker>
         ))}
 
-        {/* Contrôles de zoom personnalisés */}
-        <div className="absolute right-4 bottom-4 flex flex-col gap-2 z-[1000]">
-          <button 
-            onClick={() => map.zoomIn()}
-            className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            +
-          </button>
-          <button 
-            onClick={() => map.zoomOut()}
-            className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            -
-          </button>
-        </div>
+        <LocationUpdater onPositionChange={handlePositionChange} />
       </MapContainer>
 
       {/* Fenêtre de messagerie privée */}
@@ -696,7 +746,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
         }
 
         .special-zone.active {
-          animation: zonePulse 2s infinite;
+          animation: zoneActivation 0.5s ease-out;
         }
 
         .special-zone.recharge {
@@ -716,21 +766,45 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
         }
 
         .zone-icon {
-          font-size: 20px;
+          font-size: 24px;
+          transition: transform 0.3s ease;
         }
 
-        @keyframes zonePulse {
+        .special-zone.active .zone-icon {
+          transform: scale(1.2);
+        }
+
+        .pulse-effect {
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes zoneActivation {
           0% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+            transform: scale(0.8);
+            opacity: 0;
           }
-          70% {
-            transform: scale(1.1);
-            box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+          50% {
+            transform: scale(1.2);
+            opacity: 0.8;
           }
           100% {
             transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes pulse {
+          0% {
+            transform: scale(1);
+            opacity: 0.8;
+          }
+          50% {
+            transform: scale(1.5);
+            opacity: 0.4;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 0.8;
           }
         }
       `}</style>
