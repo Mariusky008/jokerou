@@ -5,7 +5,7 @@ export default function RGPD() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Head>
-        <title>RGPD - Jokerou</title>
+        <title>RGPD - Grim</title>
       </Head>
 
       <div className="container mx-auto px-4 py-12">
@@ -24,7 +24,7 @@ export default function RGPD() {
               <p className="text-gray-300 mb-4">
                 Nous traitons vos données sur les bases légales suivantes :<br />
                 - Votre consentement explicite<br />
-                - L'exécution du contrat de service Jokerou<br />
+                - L'exécution du contrat de service Grim<br />
                 - Nos obligations légales<br />
                 - Notre intérêt légitime à améliorer le service
               </p>
@@ -92,7 +92,7 @@ export default function RGPD() {
               <p className="text-gray-300">
                 Pour toute question relative au RGPD :<br />
                 DPO : Marie Dupont<br />
-                Email : dpo@jokerou.com<br />
+                Email : dpo@grim.com<br />
                 Tél : +33 1 23 45 67 89
               </p>
             </section>

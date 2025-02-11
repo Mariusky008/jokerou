@@ -8,11 +8,11 @@ const faqs = [
     questions: [
       {
         q: "Qu'est-ce que Grim ?",
-        a: "Grim est un jeu de cache-cache urbain en temps réel qui se joue via votre smartphone. Les joueurs sont divisés en deux équipes : les Chasseurs et le Joker, et doivent utiliser stratégie et agilité pour gagner."
+        a: "Grim est un jeu de cache-cache urbain en temps réel qui se joue via votre smartphone. Les joueurs sont divisés en deux équipes : les Chasseurs et le Grim, et doivent utiliser stratégie et agilité pour gagner."
       },
       {
         q: "Comment commencer à jouer ?",
-        a: "Pour commencer, créez un compte sur l'application, validez votre email, et rejoignez une partie à 18h. Vous serez automatiquement assigné à un rôle (Chasseur ou Joker) au début de la partie."
+        a: "Pour commencer, créez un compte sur l'application, validez votre email, et rejoignez une partie à 18h. Vous serez automatiquement assigné à un rôle (Chasseur ou Grim) au début de la partie."
       },
       {
         q: "Le jeu est-il gratuit ?",
@@ -24,16 +24,16 @@ const faqs = [
     category: "Gameplay",
     questions: [
       {
-        q: "Combien de temps dure une partie ?",
-        a: "Une partie standard dure 1 heure. Elle commence à 18h précises et se termine soit quand le Joker est capturé, soit à la fin du temps imparti s'il n'a pas été attrapé."
+        q: "Quelle est la durée d'une partie ?",
+        a: "Une partie standard dure 1 heure. Elle commence à 18h précises et se termine soit quand le Grim est capturé, soit à la fin du temps imparti s'il n'a pas été attrapé."
       },
       {
-        q: "Comment fonctionne la géolocalisation ?",
-        a: "Le jeu utilise la géolocalisation de votre téléphone pour suivre votre position en temps réel. Les Chasseurs peuvent voir la dernière position connue du Joker, mise à jour toutes les 30 secondes."
+        q: "Comment localiser les autres joueurs ?",
+        a: "Les chasseurs peuvent voir la dernière position connue du Grim, mise à jour toutes les 30 secondes."
       },
       {
         q: "Quels sont les différents pouvoirs ?",
-        a: "Les pouvoirs varient selon votre rôle. Le Joker peut devenir invisible temporairement, tandis que les Chasseurs ont accès à des outils de pistage avancés. De nouveaux pouvoirs sont débloqués en progressant."
+        a: "Les pouvoirs varient selon votre rôle. Le Grim peut devenir invisible temporairement, tandis que les Chasseurs ont accès à des outils de pistage avancés. De nouveaux pouvoirs sont débloqués en progressant."
       }
     ]
   },
@@ -160,7 +160,7 @@ export default function FAQ() {
             </p>
             <div className="flex gap-4">
               <a
-                href="mailto:support@jokerou.com"
+                href="mailto:support@grim.com"
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-lg text-center transition-all duration-300"
               >
                 Contacter le support

@@ -59,8 +59,8 @@ export default function Support() {
                 <div className="text-2xl mb-3">📧</div>
                 <h3 className="font-bold mb-2">Email</h3>
                 <p className="text-gray-400 text-sm mb-3">Réponse sous 24h</p>
-                <a href="mailto:support@jokerou.com" className="text-purple-400 hover:text-purple-300">
-                  support@jokerou.com
+                <a href="mailto:support@grim.com" className="text-purple-400 hover:text-purple-300">
+                  support@grim.com
                 </a>
               </div>
               <div className="bg-gray-800 rounded-xl p-6">

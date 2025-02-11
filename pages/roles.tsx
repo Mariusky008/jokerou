@@ -227,7 +227,7 @@ export default function Roles() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Head>
-        <title>Attribution des Rôles - Jokerou</title>
+        <title>Attribution des Rôles - Grim</title>
       </Head>
 
       <div className="container mx-auto px-4 py-8">

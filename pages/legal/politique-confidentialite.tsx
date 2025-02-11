@@ -5,7 +5,7 @@ export default function PolitiqueConfidentialite() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Head>
-        <title>Politique de Confidentialité - Jokerou</title>
+        <title>Politique de Confidentialité - Grim</title>
       </Head>
 
       <div className="container mx-auto px-4 py-12">
@@ -91,8 +91,8 @@ export default function PolitiqueConfidentialite() {
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Contact DPO</h2>
               <p className="text-gray-300">
                 Pour exercer vos droits ou poser des questions :<br />
-                Email : dpo@jokerou.com<br />
-                Adresse : DPO Jokerou, 123 Avenue des Jeux, 75001 Paris
+                Email : dpo@grim.com<br />
+                Adresse : DPO Grim, 123 Avenue des Jeux, 75001 Paris
               </p>
             </section>
           </div>

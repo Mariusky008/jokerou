@@ -54,19 +54,24 @@ interface Player {
   id: string;
   name: string;
   avatar: string;
-  role: 'joker' | 'hunter';
-  stats: PlayerStats;
-  description: string;
+  position: [number, number];
+  role: 'grim' | 'hunter';
+  isReady: boolean;
+  level: number;
 }
 
 export default function Game() {
+  const [isGrim] = useState(true);
   const [timeLeft, setTimeLeft] = useState(3600);
-  const [isJoker] = useState(true);
+  const [showGrim, setShowGrim] = useState(true);
+  const [showPowerMenu, setShowPowerMenu] = useState(false);
+  const [selectedPower, setSelectedPower] = useState<Power | null>(null);
+  const [showChat, setShowChat] = useState(false);
+  const [showPlayerList, setShowPlayerList] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [privateMessage, setPrivateMessage] = useState('');
   const [globalMessage, setGlobalMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [showJoker, setShowJoker] = useState(true);
   const chatRef = useRef<HTMLDivElement>(null);
 
   const [powers, setPowers] = useState<Power[]>([
@@ -101,7 +106,7 @@ export default function Game() {
     {
       id: 'cover1',
       name: 'Zone de couverture',
-      description: 'Meilleure dissimulation pour le Joker',
+      description: 'Meilleure dissimulation pour le Grim',
       icon: '🌫️',
       type: 'cover',
       isActive: false,
@@ -131,14 +136,10 @@ export default function Game() {
     id: 'current',
     name: 'Vous',
     avatar: '👤',
-    role: isJoker ? 'joker' : 'hunter',
-    stats: {
-      gamesPlayed: 42,
-      winRate: 75,
-      level: 15,
-      xp: 15000
-    },
-    description: 'Votre profil'
+    position: [48.8566, 2.3522],
+    role: isGrim ? 'grim' : 'hunter',
+    isReady: true,
+    level: 10
   });
 
   const [players] = useState<Player[]>([
@@ -146,40 +147,28 @@ export default function Game() {
       id: 'player1',
       name: 'Alex',
       avatar: '👤',
+      position: [48.8566, 2.3522],
       role: 'hunter',
-      stats: {
-        gamesPlayed: 23,
-        winRate: 65,
-        level: 8,
-        xp: 8000
-      },
-      description: 'Chasseur expérimenté'
+      isReady: true,
+      level: 8
     },
     {
       id: 'player2',
       name: 'Marie',
       avatar: '👤',
+      position: [48.8566, 2.3522],
       role: 'hunter',
-      stats: {
-        gamesPlayed: 35,
-        winRate: 80,
-        level: 12,
-        xp: 12000
-      },
-      description: 'Chasseuse redoutable'
+      isReady: true,
+      level: 12
     },
     {
       id: 'player3',
       name: 'Lucas',
       avatar: '👤',
+      position: [48.8566, 2.3522],
       role: 'hunter',
-      stats: {
-        gamesPlayed: 28,
-        winRate: 70,
-        level: 10,
-        xp: 10000
-      },
-      description: 'Chasseur stratégique'
+      isReady: true,
+      level: 10
     }
   ]);
 
@@ -202,19 +191,18 @@ export default function Game() {
       );
     }, 1000);
 
-    // Timer pour cacher le Joker après 30 secondes
-    if (showJoker) {
-      const jokerTimer = setTimeout(() => {
-        setShowJoker(false);
+    // Timer pour cacher le Grim après 30 secondes
+    if (showGrim) {
+      const grimTimer = setTimeout(() => {
+        setShowGrim(false);
       }, 30000);
+
       return () => {
-        clearTimeout(jokerTimer);
+        clearTimeout(grimTimer);
         clearInterval(timer);
       };
     }
-
-    return () => clearInterval(timer);
-  }, [showJoker]);
+  }, [showGrim]);
 
   useEffect(() => {
     // Scroll automatique vers le bas du chat
@@ -378,15 +366,15 @@ export default function Game() {
           className="flex justify-between items-center mb-8"
         >
           <div className="flex items-center">
-            <div className={`w-12 h-12 rounded-full ${isJoker ? 'bg-purple-600' : 'bg-blue-600'} flex items-center justify-center text-2xl`}>
-              {isJoker ? '🎭' : '🎯'}
+            <div className={`w-12 h-12 rounded-full ${isGrim ? 'bg-purple-600' : 'bg-blue-600'} flex items-center justify-center text-2xl`}>
+              {isGrim ? '🎭' : '🎯'}
             </div>
             <div className="ml-4">
               <h1 className="text-2xl font-bold">
-                {isJoker ? 'Vous êtes le Grim' : 'Vous êtes un Chasseur'}
+                {isGrim ? 'Vous êtes le Grim' : 'Vous êtes un Chasseur'}
               </h1>
               <p className="text-gray-400">
-                {isJoker ? 'Échappez aux chasseurs' : 'Traquez le Grim'}
+                {isGrim ? 'Échappez aux chasseurs' : 'Traquez le Grim'}
               </p>
             </div>
           </div>
@@ -414,8 +402,10 @@ export default function Game() {
               className="mb-8"
             >
               <MapComponent 
-                showJoker={showJoker} 
-                onPlayerSelect={setSelectedPlayer}
+                showGrim={showGrim} 
+                onPlayerSelect={(player) => {
+                  setShowChat(true);
+                }}
                 specialZones={specialZones}
               />
             </motion.div>
@@ -527,18 +517,14 @@ export default function Game() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-xl font-bold">{selectedPlayer.name}</h3>
-                    <p className="text-purple-400">Niveau {selectedPlayer.stats.level}</p>
+                    <p className="text-purple-400">Niveau {selectedPlayer.level}</p>
                   </div>
                 </div>
-                <p className="text-gray-300 mb-4">{selectedPlayer.description}</p>
+                <p className="text-gray-300 mb-4">Position: {selectedPlayer.position[0].toFixed(4)}, {selectedPlayer.position[1].toFixed(4)}</p>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-gray-800 p-3 rounded-lg">
-                    <div className="text-lg font-bold">{selectedPlayer.stats.gamesPlayed}</div>
-                    <div className="text-sm text-gray-400">Parties jouées</div>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <div className="text-lg font-bold">{selectedPlayer.stats.winRate}%</div>
-                    <div className="text-sm text-gray-400">Taux de victoire</div>
+                    <div className="text-lg font-bold">{selectedPlayer.level}</div>
+                    <div className="text-sm text-gray-400">Niveau</div>
                   </div>
                 </div>
                 <form onSubmit={handleSendPrivateMessage} className="flex flex-col gap-2 p-4 bg-gray-800 rounded-lg">

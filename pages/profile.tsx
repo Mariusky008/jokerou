@@ -24,7 +24,7 @@ interface ProfileData {
 interface Stats {
   gamesPlayed: number;
   gamesWon: number;
-  jokerGames: number;
+  grimGames: number;
   hunterGames: number;
   captureRate: number;
   escapeRate: number;
@@ -36,7 +36,7 @@ interface Stats {
 interface GameHistory {
   id: string;
   date: Date;
-  role: 'joker' | 'hunter';
+  role: 'grim' | 'hunter';
   result: 'victory' | 'defeat';
   duration: number;
   xpEarned: number;
@@ -44,7 +44,7 @@ interface GameHistory {
     id: string;
     name: string;
     avatar: string;
-    role: 'joker' | 'hunter';
+    role: 'grim' | 'hunter';
     level: number;
   }[];
 }
@@ -80,7 +80,7 @@ export default function Profile() {
   const [stats] = useState<Stats>({
     gamesPlayed: 42,
     gamesWon: 28,
-    jokerGames: 15,
+    grimGames: 15,
     hunterGames: 27,
     captureRate: 75,
     escapeRate: 60,
@@ -100,7 +100,7 @@ export default function Profile() {
     {
       id: '2',
       name: 'Chasseur Élite',
-      description: 'A capturé le Joker en moins de 10 minutes',
+      description: 'A capturé le Grim en moins de 10 minutes',
       icon: '🎯',
       rarity: 'epic'
     },
@@ -126,7 +126,7 @@ export default function Profile() {
     {
       id: '1',
       date: new Date(Date.now() - 3600000), // 1 heure avant
-      role: 'joker',
+      role: 'grim',
       result: 'victory',
       duration: 3600, // 60 minutes
       xpEarned: 1000,
@@ -144,7 +144,7 @@ export default function Profile() {
       duration: 1800, // 30 minutes
       xpEarned: 500,
       players: [
-        { id: '4', name: 'Sophie', avatar: '👤', role: 'joker', level: 10 },
+        { id: '4', name: 'Sophie', avatar: '👤', role: 'grim', level: 10 },
         { id: '5', name: 'Thomas', avatar: '👤', role: 'hunter', level: 7 },
         { id: '6', name: 'Julie', avatar: '👤', role: 'hunter', level: 9 }
       ]
@@ -284,7 +284,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
       <Head>
-        <title>Profil - Jokerou</title>
+        <title>Profil - Grim</title>
       </Head>
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -530,7 +530,10 @@ export default function Profile() {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
                           setActiveTab('badges');
-                          window.scrollTo({ top: document.querySelector('.tabs-section')?.offsetTop, behavior: 'smooth' });
+                          const element = document.querySelector('.tabs-section');
+                          if (element) {
+                            window.scrollTo({ top: (element as HTMLElement).offsetTop, behavior: 'smooth' });
+                          }
                         }}
                         className={`group relative w-12 h-12 rounded-xl bg-gradient-to-br ${rarityColors[badge.rarity]} flex items-center justify-center text-xl shadow-lg hover:shadow-xl transition-shadow`}
                         title={`${badge.name} - ${badge.description}`}
@@ -550,7 +553,10 @@ export default function Profile() {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
                           setActiveTab('badges');
-                          window.scrollTo({ top: document.querySelector('.tabs-section')?.offsetTop, behavior: 'smooth' });
+                          const element = document.querySelector('.tabs-section');
+                          if (element) {
+                            window.scrollTo({ top: (element as HTMLElement).offsetTop, behavior: 'smooth' });
+                          }
                         }}
                         className="w-12 h-12 rounded-xl bg-gray-700 flex items-center justify-center text-sm font-medium text-gray-300 hover:bg-gray-600 transition-colors"
                       >
@@ -733,15 +739,15 @@ export default function Profile() {
                   <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${
-                        game.role === 'joker' 
+                        game.role === 'grim' 
                           ? 'bg-gradient-to-br from-purple-600 to-pink-600' 
                           : 'bg-gradient-to-br from-blue-600 to-cyan-600'
                       }`}>
-                        {game.role === 'joker' ? '🎭' : '🎯'}
+                        {game.role === 'grim' ? '🎭' : '🎯'}
                       </div>
                       <div>
                         <div className="font-medium text-lg">
-                          {game.role === 'joker' ? 'Joker' : 'Chasseur'}
+                          {game.role === 'grim' ? 'Grim' : 'Chasseur'}
                         </div>
                         <div className="text-gray-400 text-sm">{formatDate(game.date)}</div>
                       </div>

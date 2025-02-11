@@ -30,7 +30,7 @@ const markerStyle = `
     transform: scale(1.1);
   }
 
-  .marker-pin.joker {
+  .marker-pin.grim {
     background: linear-gradient(45deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
     animation: pulse 2s infinite;
   }
@@ -166,7 +166,7 @@ if (typeof document !== 'undefined') {
 }
 
 interface MapProps {
-  showJoker: boolean;
+  showGrim: boolean;
   onPlayerSelect: (player: any) => void;
   specialZones?: SpecialZone[];
 }
@@ -176,7 +176,7 @@ interface PlayerLocation {
   name: string;
   avatar: string;
   position: [number, number];
-  role: 'joker' | 'hunter';
+  role: 'grim' | 'hunter';
   isReady: boolean;
   level: number;
   gamesPlayed: number;
@@ -191,7 +191,7 @@ interface PowerSpot {
   description: string;
   icon: string;
   availableIn: number; // Temps en secondes avant disponibilité
-  forRole?: 'joker' | 'hunter' | 'all';
+  forRole?: 'grim' | 'hunter' | 'all';
 }
 
 interface SpecialZone {
@@ -261,16 +261,16 @@ function ZoomControl() {
   );
 }
 
-export default function Map({ showJoker, onPlayerSelect, specialZones: initialSpecialZones = [] }: MapProps) {
+export default function Map({ showGrim, onPlayerSelect, specialZones: initialSpecialZones = [] }: MapProps) {
   const [currentPosition, setCurrentPosition] = useState<[number, number]>([48.8566, 2.3522]);
   const [selectedPlayerForChat, setSelectedPlayerForChat] = useState<PlayerLocation | null>(null);
   const [players, setPlayers] = useState<PlayerLocation[]>([
     {
       id: '1',
-      name: 'Joker',
+      name: 'Grim',
       avatar: '🎭',
       position: [48.8566, 2.3522],
-      role: 'joker',
+      role: 'grim',
       isReady: true,
       level: 15,
       gamesPlayed: 42,
@@ -320,7 +320,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
       description: 'Invisibilité pendant 45 secondes',
       icon: '👻',
       availableIn: 0,
-      forRole: 'joker'
+      forRole: 'grim'
     },
     {
       id: 'power2',
@@ -350,7 +350,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
       description: 'Ralentit les chasseurs pendant 20 secondes',
       icon: '⚡',
       availableIn: 60,
-      forRole: 'joker'
+      forRole: 'grim'
     },
     {
       id: 'teleport1',
@@ -394,7 +394,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
   // Modifier la création des icônes personnalisées
   const createCustomIcon = (player: PlayerLocation) => {
     const markerHtml = `
-      <div class="marker-pin ${player.role === 'joker' ? 'joker' : 'hunter'}">
+      <div class="marker-pin ${player.role === 'grim' ? 'grim' : 'hunter'}">
         <span class="marker-avatar">${player.avatar}</span>
         <span class="marker-level">Niv.${player.level}</span>
       </div>
@@ -527,7 +527,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
 
         {/* Marqueurs des autres joueurs */}
         {players.map((player) => {
-          if (player.role === 'joker' && !showJoker) return null;
+          if (player.role === 'grim' && !showGrim) return null;
 
           return (
             <Marker
@@ -541,7 +541,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
                     name: player.name,
                     avatar: player.avatar,
                     role: player.role,
-                    description: `${player.role === 'joker' ? 'Joker' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
+                    description: `${player.role === 'grim' ? 'Grim' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
                     stats: {
                       gamesPlayed: player.gamesPlayed,
                       winRate: player.winRate,
@@ -576,7 +576,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
                   </div>
 
                   <div className="text-sm text-gray-300 mb-3">
-                    {player.role === 'joker' ? 'Joker' : 'Chasseur'} expérimenté
+                    {player.role === 'grim' ? 'Grim' : 'Chasseur'} expérimenté
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -586,7 +586,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
                         name: player.name,
                         avatar: player.avatar,
                         role: player.role,
-                        description: `${player.role === 'joker' ? 'Joker' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
+                        description: `${player.role === 'grim' ? 'Grim' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
                         stats: {
                           gamesPlayed: player.gamesPlayed,
                           winRate: player.winRate,
@@ -625,7 +625,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
                 <div className="text-sm text-gray-300 mb-2">{spot.description}</div>
                 {spot.forRole !== 'all' && (
                   <div className="text-xs text-purple-400 mb-2">
-                    Exclusif {spot.forRole === 'joker' ? 'au Joker' : 'aux Chasseurs'}
+                    Exclusif {spot.forRole === 'grim' ? 'au Grim' : 'aux Chasseurs'}
                   </div>
                 )}
                 {spot.availableIn > 0 ? (

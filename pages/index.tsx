@@ -6,34 +6,47 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import GameRules from '../components/GameRules';
 
+interface Player {
+  id: number;
+  avatar: string;
+  role: string;
+  name: string;
+  position: { x: number; y: number };
+  level: number;
+}
+
 const initialPlayers = [
   {
     id: 1,
     avatar: "🎭",
     role: "Grim",
     name: "Le Grim",
-    position: { x: 30, y: 40 }
+    position: { x: 30, y: 40 },
+    level: 15
   },
   {
     id: 2,
     avatar: "👤",
     role: "hunter",
     name: "Marie",
-    position: { x: 45, y: 35 }
+    position: { x: 45, y: 35 },
+    level: 12
   },
   {
     id: 3,
     avatar: "👤",
     role: "hunter",
     name: "Lucas",
-    position: { x: 60, y: 50 }
+    position: { x: 60, y: 50 },
+    level: 8
   },
   {
     id: 4,
     avatar: "👤",
     role: "hunter",
     name: "Sarah",
-    position: { x: 25, y: 60 }
+    position: { x: 25, y: 60 },
+    level: 10
   }
 ];
 
@@ -122,8 +135,8 @@ export default function Home() {
     // Animation des joueurs
     const moveInterval = setInterval(() => {
       setPlayerPositions(prev => prev.map(player => {
-        // Le Joker se déplace plus rapidement et de manière plus erratique
-        const moveRange = player.role === 'joker' ? 15 : 10;
+        // Le Grim se déplace plus rapidement et de manière plus erratique
+        const moveRange = player.role === 'grim' ? 15 : 10;
         return {
           ...player,
           position: {
@@ -145,7 +158,7 @@ export default function Home() {
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <Head children={<>
         <title>GRIM - Le jeu de traque urbain révolutionnaire</title>
-        <meta name="description" content="Découvrez Jokerou, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
+        <meta name="description" content="Découvrez Grim, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
         <link rel="icon" href="/favicon.ico" />
       </>} />
 
@@ -185,12 +198,12 @@ export default function Home() {
                     scale: [1, 1.1, 1],
                     x: [
                       `${player.position.x}%`,
-                      `${player.position.x + (player.role === 'joker' ? 15 : 10) * (Math.random() - 0.5)}%`,
+                      `${player.position.x + (player.role === 'grim' ? 15 : 10) * (Math.random() - 0.5)}%`,
                       `${player.position.x}%`
                     ],
                     y: [
                       `${player.position.y}%`,
-                      `${player.position.y + (player.role === 'joker' ? 15 : 10) * (Math.random() - 0.5)}%`,
+                      `${player.position.y + (player.role === 'grim' ? 15 : 10) * (Math.random() - 0.5)}%`,
                       `${player.position.y}%`
                     ]
                   }}
@@ -200,64 +213,42 @@ export default function Home() {
                     repeatType: "reverse",
                     ease: "easeInOut"
                   }}
-                  className={`absolute flex flex-col items-center ${player.role === 'joker' ? 'z-10' : 'z-5'}`}
+                  className={`absolute flex flex-col items-center ${player.role === 'grim' ? 'z-10' : 'z-5'}`}
                   style={{
                     left: `${player.position.x}%`,
                     top: `${player.position.y}%`
                   }}
                 >
                   <motion.div 
-                    className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
-                      player.role === 'joker' 
-                        ? 'bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg shadow-purple-500/50' 
-                        : 'bg-gradient-to-br from-blue-600 to-green-600 shadow-lg shadow-blue-500/50'
+                    className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all duration-300 ${
+                      player.role === 'grim'
+                        ? 'bg-purple-600 hover:bg-purple-500'
+                        : 'bg-blue-600 hover:bg-blue-500'
                     }`}
                     whileHover={{ scale: 1.2 }}
                     animate={{
-                      boxShadow: player.role === 'joker' 
-                        ? ['0 0 20px rgba(139, 92, 246, 0.5)', '0 0 40px rgba(236, 72, 153, 0.5)', '0 0 20px rgba(139, 92, 246, 0.5)']
-                        : ['0 0 20px rgba(59, 130, 246, 0.5)', '0 0 40px rgba(16, 185, 129, 0.5)', '0 0 20px rgba(59, 130, 246, 0.5)']
-                    }}
-                    transition={{
-                      boxShadow: {
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatType: "reverse"
-                      }
+                      boxShadow: player.role === 'grim'
+                        ? '0 0 20px rgba(147, 51, 234, 0.5)'
+                        : '0 0 20px rgba(37, 99, 235, 0.5)',
                     }}
                   >
                     {player.avatar}
                   </motion.div>
-                  <motion.div 
-                    className="mt-2 px-2 py-1 rounded-full text-xs font-bold bg-black/50 backdrop-blur-sm whitespace-nowrap"
-                    animate={{
-                      opacity: [0.7, 1, 0.7],
-                      scale: [1, 1.05, 1]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatType: "reverse"
-                    }}
-                  >
-                    {player.name}
-                  </motion.div>
-                  {player.role === 'joker' && (
-                    <motion.div
-                      className="absolute -inset-2 rounded-full"
+                  {player.role === 'grim' && (
+                    <motion.div 
+                      className="mt-2 px-3 py-1 bg-purple-600 rounded-full text-sm"
                       animate={{
-                        scale: [1, 1.5, 1],
-                        opacity: [0.2, 0, 0.2]
+                        opacity: [0.7, 1, 0.7],
+                        scale: [1, 1.05, 1]
                       }}
                       transition={{
                         duration: 2,
                         repeat: Infinity,
                         repeatType: "reverse"
                       }}
-                      style={{
-                        background: 'radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%)'
-                      }}
-                    />
+                    >
+                      Niveau {player.level}
+                    </motion.div>
                   )}
                 </motion.div>
               ))}
@@ -352,8 +343,10 @@ export default function Home() {
                   transition={{ delay: 1.2 }}
                   className="block mt-4 text-xl"
                 >
-                  <span className="text-purple-400">Une expérience unique chaque soir à </span>
-                  <span className="font-mono bg-purple-500/20 px-2 py-1 rounded">18:00</span>
+                  <span className="text-purple-400">Une expérience unique chaque jour de </span>
+                  <span className="font-mono bg-purple-500/20 px-2 py-1 rounded">18:00</span>à
+                  <span className="font-mono bg-purple-500/20 px-2 py-1 rounded">21:00</span>
+
                   <span className="text-purple-400"> dans votre ville</span>
                 </motion.span>
               </p>
@@ -367,8 +360,9 @@ export default function Home() {
               className="grid grid-cols-3 gap-8 mb-12"
             >
               <div className="bg-purple-900/30 backdrop-blur-sm p-4 rounded-xl border border-purple-500/20">
-                <div className="text-2xl font-bold text-purple-400">12</div>
-                <div className="text-sm text-gray-400">Chasseurs en ligne</div>
+                <div className="text-2xl font-bold text-purple-400">16 participants</div>
+                <div className="text-sm text-gray-400">1 Grim</div>
+                <div className="text-sm text-gray-400">15 Chasseurs</div>
               </div>
               <div className="bg-pink-900/30 backdrop-blur-sm p-4 rounded-xl border border-pink-500/20">
                 <div className="text-2xl font-bold text-pink-400">3</div>
@@ -514,7 +508,7 @@ export default function Home() {
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
               Une chasse palpitante en temps réel dans les rues de votre ville
               <span className="block mt-2 text-purple-400 font-semibold animate-pulse">
-                🔴 En direct : 3 chasseurs traquent le Joker dans le quartier Saint-Michel
+                🔴 En direct : 3 chasseurs traquent le Grim dans le quartier Saint-Michel
               </span>
             </p>
           </motion.div>
@@ -579,7 +573,7 @@ export default function Home() {
                         🎭 Système
                       </motion.span>
                     </div>
-                    <p className="text-gray-300 relative z-10">Le Joker vient d'utiliser son pouvoir de camouflage près de la fontaine !</p>
+                    <p className="text-gray-300 relative z-10">Le Grim vient d'utiliser son pouvoir de camouflage près de la fontaine !</p>
                     <motion.div 
                       initial={{ width: "0%" }}
                       animate={{ width: "100%" }}
@@ -1088,7 +1082,7 @@ export default function Home() {
                 Mode Solo
               </h3>
               <p className="text-gray-300 leading-relaxed mb-6">
-                Vivez l'expérience classique : parcourez la ville en solitaire, utilisez vos pouvoirs et votre stratégie pour échapper aux chasseurs ou traquer le Joker.
+                Vivez l'expérience classique : parcourez la ville en solitaire, utilisez vos pouvoirs et votre stratégie pour échapper aux chasseurs ou traquer le Grim.
               </p>
               <ul className="space-y-3 text-gray-400">
                 <li className="flex items-center gap-2">
@@ -1246,7 +1240,7 @@ export default function Home() {
                 Règle d'élimination
               </h3>
               <p className="text-gray-300 leading-relaxed">
-                Sortir de la zone délimitée entraîne une élimination immédiate. Cette règle s'applique à tous les joueurs, Joker comme Chasseurs, pour maintenir l'équilibre du jeu.
+                Sortir de la zone délimitée entraîne une élimination immédiate. Cette règle s'applique à tous les joueurs, Grim comme Chasseurs, pour maintenir l'équilibre du jeu.
               </p>
             </motion.div>
           </div>
@@ -1374,7 +1368,7 @@ export default function Home() {
                     <p className="text-xs text-gray-500 mt-1">Notre équipe vous répond sous 24h</p>
                   </li>
                   <li>
-                    <a href="mailto:contact@jokerou.com" className="hover:text-purple-400 transition-colors">
+                    <a href="mailto:contact@grim.com" className="hover:text-purple-400 transition-colors">
                       contact@grim.com
                     </a>
                     <p className="text-xs text-gray-500 mt-1">Notre équipe vous répond sous 24h</p>
@@ -1401,7 +1395,7 @@ export default function Home() {
                 © {new Date().getFullYear()} Grim. Tous droits réservés.
               </p>
               <p className="text-xs text-gray-500">
-                Jokerou s'engage à protéger vos données personnelles conformément au RGPD.
+                Grim s'engage à protéger vos données personnelles conformément au RGPD.
                 <Link href="/legal/politique-confidentialite" className="text-purple-400 hover:text-purple-300 ml-2">
                   En savoir plus sur nos cookies
                 </Link>

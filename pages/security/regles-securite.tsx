@@ -75,7 +75,7 @@ export default function ReglesSecurite() {
                 - SAMU : 15<br />
                 - Pompiers : 18<br />
                 - Urgences : 112<br />
-                - Support Jokerou : +33 1 23 45 67 89
+                - Support Grim : +33 1 23 45 67 89
               </p>
             </section>
 
