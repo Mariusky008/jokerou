@@ -106,6 +106,7 @@ interface PossibleEvent {
 export default function Game() {
   const [isGrim] = useState(true);
   const [timeLeft, setTimeLeft] = useState(3600);
+  const [showIntroPopup, setShowIntroPopup] = useState(true);
   const [showGrim, setShowGrim] = useState(true);
   const [showPowerMenu, setShowPowerMenu] = useState(false);
   const [selectedPower, setSelectedPower] = useState<Power | null>(null);
@@ -759,6 +760,75 @@ export default function Game() {
       <Head>
         <title>Partie en cours - GRIM</title>
       </Head>
+
+      {/* Pop-up d'introduction */}
+      <AnimatePresence>
+        {showIntroPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="relative max-w-2xl p-8 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-purple-500/20"
+            >
+              {/* Bouton de fermeture */}
+              <button
+                onClick={() => setShowIntroPopup(false)}
+                className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors duration-200 border-2 border-red-700"
+              >
+                ✕
+              </button>
+              <motion.div
+                className="absolute -inset-px rounded-2xl"
+                animate={{
+                  boxShadow: [
+                    '0 0 20px rgba(168, 85, 247, 0.3)',
+                    '0 0 40px rgba(236, 72, 153, 0.3)',
+                    '0 0 20px rgba(168, 85, 247, 0.3)'
+                  ]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              <div className="relative">
+                <motion.h2
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent"
+                >
+                  {isGrim ? "🎭 C'est parti, le Grim !" : "🎯 En chasse, Chasseur !"}
+                </motion.h2>
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="space-y-4 text-lg text-gray-300"
+                >
+                  <p className="text-center">
+                    {isGrim 
+                      ? "Il est temps de quitter votre position actuelle et de trouver une cachette sûre. Les chasseurs arrivent !" 
+                      : "Le Grim est quelque part dans la zone. Coordonnez-vous et partez à sa recherche !"}
+                  </p>
+                  <div className="mt-6 p-4 bg-purple-900/30 rounded-xl border border-purple-500/20">
+                    <p className="text-center text-purple-300">
+                      👀 Consultez attentivement la carte pour repérer les zones stratégiques et les points d'intérêt.
+                    </p>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Notifications d'événements */}
       <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
