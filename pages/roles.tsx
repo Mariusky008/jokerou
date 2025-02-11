@@ -23,6 +23,8 @@ interface Player {
 export default function Roles() {
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
+  const [gameCountdown, setGameCountdown] = useState(20);
+  const [showGameCountdown, setShowGameCountdown] = useState(false);
   const [role, setRole] = useState<'grim' | 'hunter' | 'illusionist' | 'informer' | 'saboteur' | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
   const [message, setMessage] = useState('');
@@ -115,9 +117,10 @@ export default function Roles() {
         if (prev <= 1) {
           clearInterval(timer);
           setIsRevealed(true);
+          // Démarrer le compteur de 20 secondes après 25 secondes de lecture des rôles
           setTimeout(() => {
-            router.push('/game');
-          }, 45000);
+            setShowGameCountdown(true);
+          }, 25000);
           return 0;
         }
         return prev - 1;
@@ -126,6 +129,24 @@ export default function Roles() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Nouveau useEffect pour le compte à rebours du jeu
+  useEffect(() => {
+    if (showGameCountdown) {
+      const gameTimer = setInterval(() => {
+        setGameCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(gameTimer);
+            router.push('/game');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(gameTimer);
+    }
+  }, [showGameCountdown, router]);
 
   useEffect(() => {
     // Scroll automatique vers le bas du chat
@@ -229,6 +250,78 @@ export default function Roles() {
       <Head>
         <title>Attribution des Rôles - Grim</title>
       </Head>
+
+      {/* Ajout du compteur immersif */}
+      {showGameCountdown && (
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
+        >
+          <div className="flex flex-col items-center gap-12">
+            <div className="relative">
+              <motion.div
+                className="w-64 h-64 rounded-full border-8 border-purple-500 flex items-center justify-center bg-black/80"
+                animate={{
+                  scale: [1, 1.1, 1],
+                  borderColor: ['rgb(168, 85, 247)', 'rgb(236, 72, 153)', 'rgb(168, 85, 247)']
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <motion.span
+                  className="text-8xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  {gameCountdown}
+                </motion.span>
+              </motion.div>
+              <motion.div
+                className="absolute -inset-4 rounded-full"
+                animate={{
+                  boxShadow: [
+                    '0 0 40px rgba(168, 85, 247, 0.5)',
+                    '0 0 80px rgba(236, 72, 153, 0.5)',
+                    '0 0 40px rgba(168, 85, 247, 0.5)'
+                  ]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+            </div>
+            <motion.p
+              className="text-2xl font-bold text-white text-center"
+              animate={{
+                opacity: [0.7, 1, 0.7],
+                scale: [0.95, 1.05, 0.95]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              La partie commence dans <br/>
+              <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                {gameCountdown} secondes
+              </span>
+            </motion.p>
+          </div>
+        </motion.div>
+      )}
 
       <div className="container mx-auto px-4 py-8">
         {/* Bouton des règles */}
