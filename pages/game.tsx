@@ -303,14 +303,12 @@ export default function Game() {
     setShowEventEffects(true);
 
     // Créer une notification
-    createEventNotification({
-      id: Date.now().toString(),
-      eventId: newEvent.id,
-      title: "🎯 Nouveau défi !",
-      message: newEvent.challenge.description,
-      type: 'event_start',
-      timestamp: Date.now()
-    });
+    createEventNotification(
+      newEvent.id,
+      'event_start',
+      "🎯 Nouveau défi !",
+      newEvent.challenge.description
+    );
 
     // Après 2 secondes, afficher la zone
     setTimeout(() => {
@@ -329,15 +327,14 @@ export default function Game() {
     message: string
   ) => {
     const notification: EventNotification = {
-      id: `notif_${Date.now()}`,
+      id: Date.now().toString(),
       eventId,
+      type,
       title,
       message,
-      type,
       timestamp: Date.now()
     };
-
-    setEventNotifications(prev => [notification, ...prev]);
+    setEventNotifications(prev => [...prev, notification]);
   }, []);
 
   // Fonction pour calculer la distance entre deux points
@@ -739,14 +736,12 @@ export default function Game() {
     setShowEventEffects(true);
 
     // Créer une notification
-    createEventNotification({
-      id: Date.now().toString(),
-      eventId: newEvent.id,
-      title: "🎯 Nouveau défi !",
-      message: newEvent.challenge.description,
-      type: 'event_start',
-      timestamp: Date.now()
-    });
+    createEventNotification(
+      newEvent.id,
+      'event_start',
+      "🎯 Nouveau défi !",
+      newEvent.challenge.description
+    );
 
     // Après 2 secondes, afficher la zone
     setTimeout(() => {

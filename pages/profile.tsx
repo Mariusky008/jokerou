@@ -470,6 +470,7 @@ export default function Profile() {
                     <img 
                       src={profileData.avatar} 
                       alt="Avatar" 
+                      fetchPriority="auto"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -577,6 +578,7 @@ export default function Profile() {
                         <img 
                           src={editedData.avatar} 
                           alt="Avatar" 
+                          fetchPriority="auto"
                           className="w-full h-full object-cover rounded-2xl"
                         />
                       ) : (

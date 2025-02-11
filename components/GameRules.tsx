@@ -8,16 +8,14 @@ interface GameRulesProps {
 
 export default function GameRules({ isOpen, onClose }: GameRulesProps) {
   const [activeTab, setActiveTab] = useState('basic');
-  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
   const tabs = [
-    { id: 'basic', name: 'Règles de base', icon: '📜', gradient: 'from-blue-400 to-blue-600' },
-    { id: 'roles', name: 'Rôles spéciaux', icon: '🎭', gradient: 'from-indigo-400 to-violet-600' },
-    { id: 'powers', name: 'Pouvoirs et bonus', icon: '⚡', gradient: 'from-yellow-400 to-orange-600' },
-    { id: 'points', name: 'Points et niveaux', icon: '🏆', gradient: 'from-green-400 to-emerald-600' },
-    { id: 'zones', name: 'Zones spéciales', icon: '🎯', gradient: 'from-purple-400 to-pink-600' },
-    { id: 'effects', name: 'Effets spéciaux', icon: '✨', gradient: 'from-pink-400 to-red-600' },
-    { id: 'meetup', name: 'Point de rencontre', icon: '🤝', gradient: 'from-red-400 to-orange-600' }
+    { id: 'basic', name: 'Règles de base', icon: '📜' },
+    { id: 'roles', name: 'Rôles spéciaux', icon: '🎭' },
+    { id: 'powers', name: 'Pouvoirs', icon: '⚡' },
+    { id: 'points', name: 'Points', icon: '🏆' },
+    { id: 'zones', name: 'Zones', icon: '🎯' },
+    { id: 'meetup', name: 'Rencontre', icon: '🤝' }
   ];
 
   const rules = {
@@ -201,44 +199,6 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
         ]
       }
     ],
-    effects: [
-      {
-        title: "Effets visuels",
-        content: [
-          "Particules colorées lors de l'obtention d'une récompense",
-          "Pulsations lumineuses pour indiquer les zones d'événements",
-          "Compte à rebours visuel pour le temps restant",
-          "Animations spéciales pour les pouvoirs activés"
-        ]
-      },
-      {
-        title: "Effets sonores",
-        content: [
-          "Sons de notification pour les événements spontanés",
-          "Effets sonores pour les récompenses obtenues",
-          "Alertes sonores pour les zones spéciales",
-          "Sons ambiants selon la proximité des joueurs"
-        ]
-      },
-      {
-        title: "Retours visuels",
-        content: [
-          "Indicateurs de direction pour les événements proches",
-          "Marqueurs pulsants sur la carte pour les zones actives",
-          "Effets de transition lors des changements de zone",
-          "Animations de succès pour les objectifs accomplis"
-        ]
-      },
-      {
-        title: "Immersion",
-        content: [
-          "Vibrations du téléphone pour les événements importants",
-          "Intensité sonore variable selon la distance",
-          "Effets météorologiques sur la carte",
-          "Thèmes visuels adaptés à l'heure de la journée"
-        ]
-      }
-    ],
     meetup: [
       {
         title: "Point de rencontre après-partie",
@@ -277,156 +237,88 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-lg z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden border border-gray-700/50 shadow-[0_0_50px_rgba(0,0,0,0.3)]"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 20, opacity: 0 }}
+            className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl w-full max-w-4xl shadow-2xl border border-gray-700/50"
             onClick={e => e.stopPropagation()}
           >
-            {/* Header amélioré */}
-            <div className="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
-              <div className="flex justify-between items-center">
-                <motion.h2 
-                  className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text flex items-center gap-3"
-                  initial={{ x: -20 }}
-                  animate={{ x: 0 }}
-                >
-                  <motion.span
-                    animate={{ rotate: [0, -10, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    📜
-                  </motion.span>
-                  Règles du jeu
-                </motion.h2>
-                <motion.button
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-800"
-                >
-                  ✕
-                </motion.button>
-              </div>
+            {/* Header */}
+            <div className="p-6 border-b border-gray-700/50 flex justify-between items-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <span className="text-purple-400">📖</span>
+                Règles du jeu
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-white hover:bg-gray-700/50 p-2 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Tabs améliorés */}
-            <div className="border-b border-gray-700/50 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
-              <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-gray-800">
+            {/* Navigation */}
+            <div className="border-b border-gray-700/50 bg-gray-900/50">
+              <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 p-2">
                 {tabs.map(tab => (
-                  <motion.button
+                  <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`relative px-6 py-4 flex items-center gap-2 transition-all duration-300 ${
-                      activeTab === tab.id ? 'text-white' : 'text-gray-400 hover:text-white'
+                    className={`p-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${
+                      activeTab === tab.id
+                        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
                     }`}
                   >
-                    <div className={`flex items-center gap-2 ${
-                      activeTab === tab.id ? `bg-gradient-to-r ${tab.gradient} bg-clip-text text-transparent` : ''
-                    }`}>
-                      <motion.span 
-                        className="text-2xl"
-                        animate={activeTab === tab.id ? {
-                          scale: [1, 1.2, 1],
-                          rotate: [0, 10, -10, 0]
-                        } : {}}
-                        transition={{ duration: 0.5 }}
-                      >
-                        {tab.icon}
-                      </motion.span>
-                      {tab.name}
-                    </div>
-                    {activeTab === tab.id && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${tab.gradient}`}
-                      />
-                    )}
-                  </motion.button>
+                    <span className="text-xl">{tab.icon}</span>
+                    <span className="text-sm font-medium hidden sm:inline">{tab.name}</span>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Contenu amélioré */}
-            <div className="p-6 overflow-y-auto max-h-[60vh] scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-gray-800">
-              <AnimatePresence mode="wait">
+            {/* Contenu */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {rules[activeTab as keyof typeof rules] && (
                 <motion.div
                   key={activeTab}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
                 >
                   {rules[activeTab as keyof typeof rules].map((section, index) => (
-                    <motion.div
-                      key={section.title}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      onHoverStart={() => setHoveredSection(section.title)}
-                      onHoverEnd={() => setHoveredSection(null)}
-                      className={`mb-8 last:mb-0 p-6 rounded-xl transition-all duration-300 ${
-                        hoveredSection === section.title
-                          ? 'bg-gray-800/50 shadow-lg transform scale-[1.02]'
-                          : 'bg-transparent'
-                      }`}
-                    >
-                      <motion.h3 
-                        className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text flex items-center gap-3"
-                        whileHover={{ x: 10 }}
-                      >
-                        <motion.span
-                          animate={hoveredSection === section.title ? {
-                            scale: [1, 1.2, 1],
-                            rotate: [0, 10, -10, 0]
-                          } : {}}
-                          transition={{ duration: 0.5 }}
-                        >
-                          {activeTab === 'basic' ? '📜' :
-                           activeTab === 'roles' ? '🎭' :
-                           activeTab === 'powers' ? '⚡' :
-                           activeTab === 'points' ? '🏆' :
-                           activeTab === 'zones' ? '🎯' :
-                           activeTab === 'effects' ? '✨' : '🤝'}
-                        </motion.span>
-                        {section.title}
-                      </motion.h3>
-                      <motion.ul className="space-y-4">
-                        {section.content.map((item, i) => (
-                          <motion.li
-                            key={i}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 + i * 0.05 }}
-                            whileHover={{ x: 10 }}
-                            className="flex items-start gap-4 text-gray-300 bg-gray-800/30 p-4 rounded-lg hover:bg-gray-800/50 transition-all duration-300 hover:shadow-lg group"
-                          >
-                            <motion.span 
-                              className="text-purple-400 text-lg"
-                              animate={hoveredSection === section.title ? {
-                                scale: [1, 1.2, 1],
-                                rotate: [0, 360]
-                              } : {}}
-                              transition={{ duration: 0.5 }}
+                    <div key={section.title} className="mb-6 last:mb-0">
+                      <div className="bg-gray-800/50 rounded-lg p-4 backdrop-blur-sm">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 pb-3 border-b border-gray-700/50">
+                          <span className="text-purple-400 text-xl">
+                            {activeTab === 'basic' ? '📜' :
+                             activeTab === 'roles' ? '🎭' :
+                             activeTab === 'powers' ? '⚡' :
+                             activeTab === 'points' ? '🏆' :
+                             activeTab === 'zones' ? '🎯' : '🤝'}
+                          </span>
+                          {section.title}
+                        </h3>
+                        <ul className="grid gap-3">
+                          {section.content && section.content.map((item, i) => (
+                            <li
+                              key={i}
+                              className="text-gray-300 bg-gray-800/30 p-3 rounded-lg hover:bg-gray-800/50 hover:text-white transition-all duration-200 flex items-start gap-3"
                             >
-                              •
-                            </motion.span>
-                            <span className="flex-1 group-hover:text-white transition-colors">
-                              {item}
-                            </span>
-                          </motion.li>
-                        ))}
-                      </motion.ul>
-                    </motion.div>
+                              <span className="text-purple-400 mt-1">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   ))}
                 </motion.div>
-              </AnimatePresence>
+              )}
             </div>
           </motion.div>
         </motion.div>
