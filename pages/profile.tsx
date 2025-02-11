@@ -18,6 +18,7 @@ interface ProfileData {
   avatar: string;
   name: string;
   description: string;
+  isImage?: boolean;
 }
 
 interface Stats {
@@ -54,6 +55,17 @@ interface Player {
   avatar: string;
 }
 
+// Ajouter les nouvelles interfaces pour les notifications
+interface Notification {
+  id: string;
+  type: 'badge' | 'role' | 'power' | 'message' | 'level';
+  title: string;
+  description: string;
+  icon: string;
+  date: Date;
+  read: boolean;
+}
+
 export default function Profile() {
   // Données simulées du profil
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -80,8 +92,8 @@ export default function Profile() {
   const [badges] = useState<Badge[]>([
     {
       id: '1',
-      name: 'Joker Invincible',
-      description: 'A survécu pendant 60 minutes en tant que Joker',
+      name: 'Grim Invincible',
+      description: 'A survécu pendant 60 minutes en tant que Grim',
       icon: '🎭',
       rarity: 'legendary'
     },
@@ -170,79 +182,408 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const handleAvatarChange = (emoji: string) => {
-    setEditedData({ ...editedData, avatar: emoji });
+  const handleAvatarChange = (value: string) => {
+    setEditedData(prev => ({
+      ...prev,
+      avatar: value,
+      isImage: value.startsWith('data:image')
+    }));
+  };
+
+  // Ajout d'un state pour la navigation par onglets
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'badges'>('overview');
+
+  // Ajouter le state pour les notifications
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: '1',
+      type: 'badge',
+      title: 'Nouveau badge débloqué !',
+      description: 'Vous avez obtenu le badge "Chasseur Élite"',
+      icon: '🏆',
+      date: new Date(Date.now() - 3600000),
+      read: false
+    },
+    {
+      id: '2',
+      type: 'role',
+      title: 'Nouveau rôle disponible',
+      description: 'Le rôle "Illusionniste" est maintenant disponible',
+      icon: '🎭',
+      date: new Date(Date.now() - 7200000),
+      read: false
+    },
+    {
+      id: '3',
+      type: 'power',
+      title: 'Nouveau pouvoir débloqué',
+      description: 'Vous avez débloqué le pouvoir "Vision Thermique"',
+      icon: '🔥',
+      date: new Date(Date.now() - 10800000),
+      read: false
+    }
+  ]);
+
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prev => prev.map(n => 
+      n.id === notificationId ? { ...n, read: true } : n
+    ));
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  // Ajouter ces states en haut du composant avec les autres states
+  const [showMessages, setShowMessages] = useState(false);
+  const [messages, setMessages] = useState<{
+    id: string;
+    senderId: string;
+    senderName: string;
+    senderAvatar: string;
+    content: string;
+    date: Date;
+    read: boolean;
+  }[]>([
+    {
+      id: '1',
+      senderId: '2',
+      senderName: 'Alex',
+      senderAvatar: '👤',
+      content: 'Bien joué pour la dernière partie !',
+      date: new Date(Date.now() - 1800000),
+      read: false
+    },
+    {
+      id: '2',
+      senderId: '3',
+      senderName: 'Marie',
+      senderAvatar: '👤',
+      content: 'On fait une partie ce soir ?',
+      date: new Date(Date.now() - 3600000),
+      read: false
+    }
+  ]);
+
+  const unreadMessages = messages.filter(m => !m.read).length;
+
+  const markMessageAsRead = (messageId: string) => {
+    setMessages(prev => prev.map(m => 
+      m.id === messageId ? { ...m, read: true } : m
+    ));
+  };
+
+  const markAllMessagesAsRead = () => {
+    setMessages(prev => prev.map(m => ({ ...m, read: true })));
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
       <Head>
         <title>Profil - Jokerou</title>
       </Head>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Bouton des règles */}
-        <div className="fixed top-4 right-4 z-50">
-          <button
-            onClick={() => setShowRules(true)}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm py-2 px-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
-          >
-            <span>📜</span>
-            Règles du jeu
-          </button>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header avec navigation et notifications */}
+        <div className="flex justify-between items-center mb-8">
+          <Link href="/" className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2">
+            <span>←</span>
+            <span>Retour à l'accueil</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            {/* Bouton messagerie */}
+            <div className="relative">
+              <button
+                onClick={() => setShowMessages(!showMessages)}
+                className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 relative"
+              >
+                <span>💬</span>
+                Messages
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {unreadMessages}
+                  </span>
+                )}
+              </button>
+
+              {/* Menu des messages */}
+              {showMessages && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
+                >
+                  <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+                    <h3 className="font-bold">Messages</h3>
+                    {unreadMessages > 0 && (
+                      <button
+                        onClick={markAllMessagesAsRead}
+                        className="text-sm text-purple-400 hover:text-purple-300"
+                      >
+                        Tout marquer comme lu
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {messages.length > 0 ? (
+                      messages.map((message) => (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className={`p-4 border-b border-gray-700 last:border-0 hover:bg-gray-700/50 transition-colors cursor-pointer ${
+                            !message.read ? 'bg-purple-500/10' : ''
+                          }`}
+                          onClick={() => {
+                            markMessageAsRead(message.id);
+                            setSelectedPlayer({
+                              id: message.senderId,
+                              name: message.senderName,
+                              avatar: message.senderAvatar
+                            });
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                              {message.senderAvatar}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-medium">{message.senderName}</div>
+                              <div className="text-sm text-gray-400 line-clamp-2">{message.content}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {new Intl.RelativeTimeFormat('fr', { numeric: 'auto' }).format(
+                                  Math.floor((message.date.getTime() - Date.now()) / 3600000),
+                                  'hour'
+                                )}
+                              </div>
+                            </div>
+                            {!message.read && (
+                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-gray-400">
+                        Aucun message
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+            {/* Bouton notifications existant */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 relative"
+              >
+                <span>🔔</span>
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Menu des notifications */}
+              {showNotifications && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
+                >
+                  <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+                    <h3 className="font-bold">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllAsRead}
+                        className="text-sm text-purple-400 hover:text-purple-300"
+                      >
+                        Tout marquer comme lu
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((notification) => (
+                        <motion.div
+                          key={notification.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className={`p-4 border-b border-gray-700 last:border-0 hover:bg-gray-700/50 transition-colors cursor-pointer ${
+                            !notification.read ? 'bg-purple-500/10' : ''
+                          }`}
+                          onClick={() => markAsRead(notification.id)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="text-2xl">{notification.icon}</div>
+                            <div className="flex-1">
+                              <div className="font-medium">{notification.title}</div>
+                              <div className="text-sm text-gray-400">{notification.description}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {new Intl.RelativeTimeFormat('fr', { numeric: 'auto' }).format(
+                                  Math.floor((notification.date.getTime() - Date.now()) / 3600000),
+                                  'hour'
+                                )}
+                              </div>
+                            </div>
+                            {!notification.read && (
+                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-gray-400">
+                        Aucune notification
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowRules(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2"
+            >
+              <span>📜</span>
+              Règles du jeu
+            </button>
+          </div>
         </div>
 
-        <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">
-          ← Retour à l'accueil
-        </Link>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid md:grid-cols-2 gap-8"
-        >
-          {/* Section Profil */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gray-900 rounded-2xl p-8 shadow-neon"
-          >
-            {!isEditing ? (
-              <div className="flex items-center mb-8">
-                <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center text-3xl cursor-pointer hover:bg-purple-500 transition-colors">
-                  {profileData.avatar}
+        {/* Section profil principale */}
+        <div className="bg-gray-800 rounded-2xl p-6 mb-8 border border-purple-500/20">
+          {!isEditing ? (
+            <div className="flex items-center gap-8">
+              <div className="relative group">
+                <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center text-4xl shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300 overflow-hidden">
+                  {profileData.isImage ? (
+                    <img 
+                      src={profileData.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    profileData.avatar
+                  )}
                 </div>
-                <div className="ml-6 flex-1">
-                  <h1 className="text-3xl font-bold">{profileData.name}</h1>
-                  <p className="text-gray-400">Niveau {stats.level}</p>
-                  <p className="text-gray-300 mt-2">{profileData.description}</p>
+                <div className="absolute -bottom-2 -right-2">
+                  <button
+                    onClick={() => {
+                      setEditedData(profileData);
+                      setIsEditing(true);
+                    }}
+                    className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors"
+                    title="Modifier le profil"
+                  >
+                    ✏️
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditedData(profileData);
-                    setIsEditing(true);
-                  }}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                  title="Modifier le profil"
-                >
-                  ✏️
-                </button>
               </div>
-            ) : (
-              <form onSubmit={handleEditSubmit} className="mb-8">
-                <div className="flex items-start gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-2">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                    {profileData.name}
+                  </h1>
+                  <span className="px-3 py-1 bg-purple-600/20 rounded-full text-purple-400 text-sm">
+                    Niveau {stats.level}
+                  </span>
+                </div>
+                <p className="text-gray-300 mb-4">{profileData.description}</p>
+                
+                {/* Barre XP améliorée */}
+                <div className="bg-gray-900/50 p-4 rounded-xl">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-purple-400">XP: {stats.xp}</span>
+                    <span className="text-gray-400">Prochain niveau: {stats.nextLevelXp}</span>
+                  </div>
+                  <div className="relative w-full h-4 bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(stats.xp / stats.nextLevelXp) * 100}%` }}
+                      transition={{ duration: 1 }}
+                      className="absolute h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Section des badges */}
+                <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-sm font-medium text-gray-400">Badges obtenus</h3>
+                    <span className="text-xs text-purple-400">({badges.length})</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {badges.slice(0, 4).map((badge) => (
+                      <motion.button
+                        key={badge.id}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setActiveTab('badges');
+                          window.scrollTo({ top: document.querySelector('.tabs-section')?.offsetTop, behavior: 'smooth' });
+                        }}
+                        className={`group relative w-12 h-12 rounded-xl bg-gradient-to-br ${rarityColors[badge.rarity]} flex items-center justify-center text-xl shadow-lg hover:shadow-xl transition-shadow`}
+                        title={`${badge.name} - ${badge.description}`}
+                      >
+                        {badge.icon}
+                        <div className="absolute inset-0 rounded-xl bg-black opacity-0 group-hover:opacity-50 transition-opacity" />
+                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="px-2 py-1 bg-gray-900 rounded text-xs whitespace-nowrap">
+                            {badge.name}
+                          </div>
+                        </div>
+                      </motion.button>
+                    ))}
+                    {badges.length > 4 && (
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setActiveTab('badges');
+                          window.scrollTo({ top: document.querySelector('.tabs-section')?.offsetTop, behavior: 'smooth' });
+                        }}
+                        className="w-12 h-12 rounded-xl bg-gray-700 flex items-center justify-center text-sm font-medium text-gray-300 hover:bg-gray-600 transition-colors"
+                      >
+                        +{badges.length - 4}
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleEditSubmit} className="mb-8">
+              <div className="flex items-start gap-6">
+                <div>
                   <div>
-                    <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center text-3xl mb-2">
-                      {editedData.avatar}
+                    <div className="w-32 h-32 bg-purple-600 rounded-2xl flex items-center justify-center text-5xl mb-4">
+                      {editedData.avatar.startsWith('data:image') ? (
+                        <img 
+                          src={editedData.avatar} 
+                          alt="Avatar" 
+                          className="w-full h-full object-cover rounded-2xl"
+                        />
+                      ) : (
+                        editedData.avatar
+                      )}
                     </div>
-                    <div className="grid grid-cols-4 gap-1 bg-gray-800 p-2 rounded-lg">
+                    <div className="grid grid-cols-4 gap-2 bg-gray-800 p-3 rounded-lg">
                       {['👤', '🎭', '🦸', '🦹', '🎮', '🎯', '🎪', '🎨'].map((emoji) => (
                         <button
                           key={emoji}
                           type="button"
                           onClick={() => handleAvatarChange(emoji)}
-                          className={`p-2 rounded-lg ${
+                          className={`p-4 rounded-lg text-2xl hover:scale-110 transition-transform ${
                             editedData.avatar === emoji ? 'bg-purple-600' : 'hover:bg-gray-700'
                           }`}
                         >
@@ -250,185 +591,188 @@ export default function Profile() {
                         </button>
                       ))}
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-4">
-                    <div>
-                      <label className="block text-gray-300 mb-2" htmlFor="name">
-                        Nom
+                    <div className="mt-4">
+                      <label className="flex items-center justify-center w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-lg cursor-pointer transition-colors">
+                        <span className="mr-2">📷</span>
+                        <span>Télécharger une photo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                handleAvatarChange(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
                       </label>
-                      <input
-                        type="text"
-                        id="name"
-                        value={editedData.name}
-                        onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
-                        className="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2" htmlFor="description">
-                        Description
-                      </label>
-                      <textarea
-                        id="description"
-                        value={editedData.description}
-                        onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
-                        className="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                        rows={3}
-                        required
-                      />
-                    </div>
-                    <div className="flex justify-end gap-4">
-                      <button
-                        type="button"
-                        onClick={() => setIsEditing(false)}
-                        className="px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-                      >
-                        Enregistrer
-                      </button>
                     </div>
                   </div>
                 </div>
-              </form>
-            )}
-
-            {/* Barre de progression */}
-            <div className="mb-8">
-              <div className="flex justify-between text-sm mb-2">
-                <span>XP: {stats.xp}</span>
-                <span>{stats.nextLevelXp}</span>
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <label className="block text-gray-300 mb-2" htmlFor="name">
+                      Nom
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      value={editedData.name}
+                      onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
+                      className="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-2" htmlFor="description">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      value={editedData.description}
+                      onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
+                      className="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      rows={3}
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                    >
+                      Enregistrer
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-4">
-                <div
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full"
-                  style={{ width: `${(stats.xp / stats.nextLevelXp) * 100}%` }}
+            </form>
+          )}
+        </div>
+
+        {/* Navigation par onglets */}
+        <div className="flex gap-4 mb-6 border-b border-gray-700 tabs-section">
+          {[
+            { id: 'overview', label: 'Vue d\'ensemble' },
+            { id: 'history', label: 'Historique' },
+            { id: 'badges', label: 'Badges' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as 'overview' | 'history' | 'badges')}
+              className={`px-4 py-3 font-medium transition-colors relative ${
+                activeTab === tab.id
+                  ? 'text-purple-400'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"
                 />
-              </div>
-            </div>
+              )}
+            </button>
+          ))}
+        </div>
 
-            {/* Statistiques */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800 p-4 rounded-xl">
-                <div className="text-2xl font-bold">{stats.gamesPlayed}</div>
+        {/* Contenu des onglets */}
+        <div className="space-y-8">
+          {activeTab === 'overview' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            >
+              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                <div className="text-3xl mb-2">🎮</div>
+                <div className="text-2xl font-bold text-purple-400">{stats.gamesPlayed}</div>
                 <div className="text-gray-400">Parties jouées</div>
               </div>
-              <div className="bg-gray-800 p-4 rounded-xl">
-                <div className="text-2xl font-bold">{stats.gamesWon}</div>
+              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                <div className="text-3xl mb-2">🏆</div>
+                <div className="text-2xl font-bold text-purple-400">{stats.gamesWon}</div>
                 <div className="text-gray-400">Victoires</div>
               </div>
-              <div className="bg-gray-800 p-4 rounded-xl">
-                <div className="text-2xl font-bold">{stats.captureRate}%</div>
+              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                <div className="text-3xl mb-2">🎯</div>
+                <div className="text-2xl font-bold text-purple-400">{stats.captureRate}%</div>
                 <div className="text-gray-400">Taux de capture</div>
               </div>
-              <div className="bg-gray-800 p-4 rounded-xl">
-                <div className="text-2xl font-bold">{stats.escapeRate}%</div>
+              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                <div className="text-3xl mb-2">🏃‍♂️</div>
+                <div className="text-2xl font-bold text-purple-400">{stats.escapeRate}%</div>
                 <div className="text-gray-400">Taux d'évasion</div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
 
-          {/* Section Badges */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-gray-900 rounded-2xl p-8 shadow-neon"
-          >
-            <h2 className="text-2xl font-bold mb-6">Badges</h2>
-            <div className="grid gap-4">
-              {badges.map((badge, index) => (
-                <motion.div
-                  key={badge.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  className="bg-gray-800 p-4 rounded-xl flex items-center"
-                >
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${rarityColors[badge.rarity]} flex items-center justify-center text-2xl`}>
-                    {badge.icon}
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="font-bold">{badge.name}</h3>
-                    <p className="text-gray-400 text-sm">{badge.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Nouvelle section : Historique des parties */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 grid gap-8"
-        >
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
-            Historique des parties
-          </h2>
-
-          <div className="space-y-6">
-            {gameHistory.map((game) => (
-              <motion.div
-                key={game.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-gray-900 rounded-2xl p-6 shadow-neon"
-              >
-                <div className="flex flex-wrap items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full ${
-                      game.role === 'joker' ? 'bg-purple-600' : 'bg-blue-600'
-                    } flex items-center justify-center text-2xl`}>
-                      {game.role === 'joker' ? '🎭' : '🎯'}
-                    </div>
-                    <div>
-                      <div className="font-bold text-lg">
-                        {game.role === 'joker' ? 'Joker' : 'Chasseur'}
+          {activeTab === 'history' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {gameHistory.map((game) => (
+                <div key={game.id} className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${
+                        game.role === 'joker' 
+                          ? 'bg-gradient-to-br from-purple-600 to-pink-600' 
+                          : 'bg-gradient-to-br from-blue-600 to-cyan-600'
+                      }`}>
+                        {game.role === 'joker' ? '🎭' : '🎯'}
                       </div>
-                      <div className="text-gray-400">{formatDate(game.date)}</div>
+                      <div>
+                        <div className="font-medium text-lg">
+                          {game.role === 'joker' ? 'Joker' : 'Chasseur'}
+                        </div>
+                        <div className="text-gray-400 text-sm">{formatDate(game.date)}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className={`px-4 py-1.5 rounded-lg text-sm font-medium ${
+                        game.result === 'victory'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {game.result === 'victory' ? 'Victoire' : 'Défaite'}
+                      </div>
+                      <div className="bg-purple-500/20 text-purple-400 px-4 py-1.5 rounded-lg text-sm font-medium">
+                        +{game.xpEarned} XP
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className={`px-4 py-2 rounded-full ${
-                      game.result === 'victory' 
-                        ? 'bg-green-600/20 text-green-400' 
-                        : 'bg-red-600/20 text-red-400'
-                    }`}>
-                      {game.result === 'victory' ? 'Victoire' : 'Défaite'}
-                    </div>
-                    <div className="text-purple-400">+{game.xpEarned} XP</div>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2 text-gray-400 mb-4">
-                  <span>⏱️ Durée : {formatDuration(game.duration)}</span>
-                </div>
-
-                <div className="border-t border-gray-800 pt-4">
-                  <h4 className="text-lg font-bold mb-3">Joueurs de la partie</h4>
-                  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {game.players.map((player) => (
                       <div
                         key={player.id}
-                        className="bg-gray-800 p-4 rounded-xl flex items-center justify-between"
+                        className="bg-gray-700/50 rounded-lg p-4 flex items-center justify-between"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
+                          <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
                             {player.avatar}
                           </div>
                           <div>
-                            <div className="font-bold">{player.name}</div>
-                            <div className="text-sm text-purple-400">
-                              Niveau {player.level}
-                            </div>
+                            <div className="font-medium">{player.name}</div>
+                            <div className="text-sm text-purple-400">Niveau {player.level}</div>
                           </div>
                         </div>
                         <button
@@ -437,7 +781,7 @@ export default function Profile() {
                             name: player.name,
                             avatar: player.avatar
                           })}
-                          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                          className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
                           title="Envoyer un message"
                         >
                           💬
@@ -446,10 +790,44 @@ export default function Profile() {
                     ))}
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          {activeTab === 'badges' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              {badges.map((badge) => (
+                <div
+                  key={badge.id}
+                  className="bg-gray-800 rounded-xl p-6 border border-purple-500/20 flex items-center gap-6"
+                >
+                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${rarityColors[badge.rarity]} flex items-center justify-center text-3xl shadow-lg`}>
+                    {badge.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-1">{badge.name}</h3>
+                    <p className="text-gray-400">{badge.description}</p>
+                    <div className="mt-2">
+                      <span className={`text-sm px-3 py-1 rounded-full bg-opacity-20 ${
+                        badge.rarity === 'legendary' ? 'bg-yellow-500 text-yellow-400' :
+                        badge.rarity === 'epic' ? 'bg-purple-500 text-purple-400' :
+                        badge.rarity === 'rare' ? 'bg-blue-500 text-blue-400' :
+                        'bg-gray-500 text-gray-400'
+                      }`}>
+                        {badge.rarity.charAt(0).toUpperCase() + badge.rarity.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </div>
 
         {/* Fenêtre de messagerie */}
         {selectedPlayer && (
@@ -467,12 +845,6 @@ export default function Profile() {
 
       {/* Modal des règles */}
       <GameRules isOpen={showRules} onClose={() => setShowRules(false)} />
-
-      <style jsx global>{`
-        .shadow-neon {
-          box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
-        }
-      `}</style>
     </div>
   );
 } 
