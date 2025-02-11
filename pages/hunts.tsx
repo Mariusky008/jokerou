@@ -261,13 +261,22 @@ export default function Hunts() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
             Chasses disponibles
           </h1>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
-          >
-            <span>🎯</span>
-            Créer une chasse
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/profile"
+              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
+            >
+              <span>👤</span>
+              Mon profil
+            </Link>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
+            >
+              <span>🎯</span>
+              Créer une chasse
+            </button>
+          </div>
         </div>
 
         {/* Liste des chasses */}

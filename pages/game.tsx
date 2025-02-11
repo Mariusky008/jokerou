@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import TalkieWalkie from '../components/TalkieWalkie';
+import Link from 'next/link';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const MapComponent = dynamic(() => import('../components/Map'), {
@@ -393,6 +394,13 @@ export default function Game() {
           <div className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-transparent bg-clip-text">
             {formatTime(timeLeft)}
           </div>
+          <Link
+            href="/profile"
+            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2"
+          >
+            <span>👤</span>
+            Mon profil
+          </Link>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
