@@ -12,6 +12,7 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
 
   const tabs = [
     { id: 'basic', name: 'Règles de base', icon: '📜', gradient: 'from-blue-400 to-blue-600' },
+    { id: 'roles', name: 'Rôles spéciaux', icon: '🎭', gradient: 'from-indigo-400 to-violet-600' },
     { id: 'powers', name: 'Pouvoirs et bonus', icon: '⚡', gradient: 'from-yellow-400 to-orange-600' },
     { id: 'points', name: 'Points et niveaux', icon: '🏆', gradient: 'from-green-400 to-emerald-600' },
     { id: 'zones', name: 'Zones spéciales', icon: '🎯', gradient: 'from-purple-400 to-pink-600' },
@@ -23,8 +24,8 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
       {
         title: "Objectifs",
         content: [
-          "Le Joker doit survivre pendant 60 minutes",
-          "Les Chasseurs doivent capturer le Joker en s'approchant à moins de 50 mètres",
+          "Le Grim doit survivre pendant 60 minutes",
+          "Les Chasseurs doivent capturer le Grim en s'approchant à moins de 50 mètres",
           "Tous les joueurs doivent rester dans la zone de jeu délimitée"
         ]
       },
@@ -32,14 +33,50 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
         title: "Élimination",
         content: [
           "Sortir de la zone de jeu entraîne une élimination immédiate",
-          "Le Joker est éliminé si un Chasseur s'approche à moins de 50 mètres",
+          "Le Grim est éliminé si un Chasseur s'approche à moins de 50 mètres",
           "Les Chasseurs ne peuvent pas être éliminés mais peuvent être ralentis"
+        ]
+      }
+    ],
+    roles: [
+      {
+        title: "Rôles de base",
+        content: [
+          "Le Grim (🎭) : Doit survivre pendant 60 minutes en évitant les chasseurs",
+          "Les Chasseurs (🎯) : Doivent capturer le Grim en s'approchant à moins de 50 mètres",
+        ]
+      },
+      {
+        title: "L'Illusionniste (Traître)",
+        content: [
+          "Se fait passer pour un Chasseur mais aide secrètement le Grim",
+          "Peut fournir de fausses informations aux autres Chasseurs",
+          "Peut créer un leurre sur la carte (faux signal du Grim)",
+          "Doit maintenir sa couverture pour ne pas être découvert"
+        ]
+      },
+      {
+        title: "L'Informateur (Neutre)",
+        content: [
+          "Se déplace librement sur la carte",
+          "Peut vendre des informations au plus offrant",
+          "Choisit de donner des infos exactes ou fausses",
+          "Gagne des points en fonction de l'utilité de ses informations"
+        ]
+      },
+      {
+        title: "Le Saboteur (Piègeur)",
+        content: [
+          "Place des pièges sur la carte qui ralentissent les Chasseurs",
+          "Peut créer des zones de brouillage des communications",
+          "Capable de désactiver temporairement les pouvoirs d'un autre joueur",
+          "Doit gérer stratégiquement ses ressources de pièges"
         ]
       }
     ],
     powers: [
       {
-        title: "Pouvoirs du Joker",
+        title: "Pouvoirs du Grim",
         content: [
           "Mode Fantôme (👻) : Invisibilité pendant 45 secondes",
           "Leurre (🎭) : Envoie une fausse position",
@@ -50,8 +87,32 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
         title: "Pouvoirs des Chasseurs",
         content: [
           "Super Radar (🎯) : Détection précise pendant 30 secondes",
-          "Vision Thermique (🔥) : Détecte les traces récentes du Joker",
+          "Vision Thermique (🔥) : Détecte les traces récentes du Grim",
           "Coordination (📡) : Partage la position avec les autres chasseurs"
+        ]
+      },
+      {
+        title: "Pouvoirs de l'Illusionniste",
+        content: [
+          "Faux Signal (🎭) : Crée un leurre du Grim sur la carte",
+          "Brouillage (📡) : Perturbe les communications des Chasseurs",
+          "Couverture (🎪) : Masque temporairement son statut de traître"
+        ]
+      },
+      {
+        title: "Pouvoirs de l'Informateur",
+        content: [
+          "Radar Avancé (🔍) : Détecte tous les joueurs dans un rayon",
+          "Marchandage (💰) : Propose des informations aux autres joueurs",
+          "Anonymat (🎭) : Cache son identité lors des échanges"
+        ]
+      },
+      {
+        title: "Pouvoirs du Saboteur",
+        content: [
+          "Piège Paralysant (⚡) : Immobilise temporairement un joueur",
+          "Zone de Brouillage (📡) : Désactive les pouvoirs dans une zone",
+          "Sabotage (🔧) : Désactive le pouvoir d'un joueur ciblé"
         ]
       },
       {
@@ -59,7 +120,7 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
         content: [
           "Stations de recharge (⚡) : Recharge rapide des pouvoirs spéciaux",
           "Zones bonus (⭐) : Points d'expérience supplémentaires",
-          "Caches secrètes (🎭) : Zones où le Joker peut se cacher temporairement",
+          "Caches secrètes (🎭) : Zones où le Grim peut se cacher temporairement",
           "Points stratégiques (🎯) : Zones offrant une meilleure visibilité aux chasseurs"
         ]
       }
@@ -68,20 +129,45 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
       {
         title: "Système de points",
         content: [
-          "Victoire en tant que Joker : 1000 XP",
+          "Victoire en tant que Grim : 1000 XP",
           "Victoire en tant que Chasseur : 500 XP",
+          "Victoire en tant qu'Illusionniste (non découvert) : 1200 XP",
+          "Points de l'Informateur : 50-200 XP par info vendue selon l'utilité",
+          "Points du Saboteur : 100 XP par piège utilisé avec succès",
           "Bonus de temps pour capture rapide : jusqu'à 300 XP",
           "Bonus d'utilisation de pouvoirs : 50 XP par pouvoir",
           "Bonus de découverte : 100 XP pour chaque nouveau point d'intérêt trouvé"
         ]
       },
       {
+        title: "Progression des niveaux",
+        content: [
+          "Niveau 1 à 5 : 1000 XP par niveau",
+          "Niveau 6 à 10 : 2000 XP par niveau",
+          "Niveau 11 à 20 : 3000 XP par niveau",
+          "Niveau 21+ : 5000 XP par niveau",
+          "Votre barre de progression est visible dans votre profil",
+          "Un indicateur montre l'XP actuel et l'XP requis pour le prochain niveau"
+        ]
+      },
+      {
         title: "Niveaux et Récompenses",
         content: [
           "Nouveaux pouvoirs débloqués tous les 5 niveaux",
+          "Rôles spéciaux débloqués à partir du niveau 10",
           "Badges spéciaux pour les performances exceptionnelles",
           "Skins et avatars exclusifs aux niveaux élevés",
-          "Titres spéciaux (Maître de l'Évasion, Chasseur d'Élite, etc.)"
+          "Titres spéciaux (Maître de l'Évasion, Chasseur d'Élite, Illusionniste Suprême, etc.)"
+        ]
+      },
+      {
+        title: "Suivi de progression",
+        content: [
+          "Accédez à votre profil pour voir votre progression détaillée",
+          "Statistiques complètes de vos parties (victoires, défaites, rôles joués)",
+          "Historique des XP gagnés par partie",
+          "Badges et récompenses débloqués",
+          "Prochaines récompenses à débloquer"
         ]
       }
     ],
@@ -99,7 +185,7 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
         title: "Zones spéciales",
         content: [
           "Zones de recharge : Points stratégiques pour recharger les pouvoirs",
-          "Zones de couverture : Endroits avec une meilleure dissimulation pour le Joker",
+          "Zones de couverture : Endroits avec une meilleure dissimulation pour le Grim",
           "Points de surveillance : Positions avantageuses pour les chasseurs",
           "Zones interdites : Certaines zones peuvent être temporairement inaccessibles"
         ]
@@ -264,6 +350,7 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
                           transition={{ duration: 0.5 }}
                         >
                           {activeTab === 'basic' ? '📜' :
+                           activeTab === 'roles' ? '🎭' :
                            activeTab === 'powers' ? '⚡' :
                            activeTab === 'points' ? '🏆' :
                            activeTab === 'zones' ? '🎯' : '🤝'}

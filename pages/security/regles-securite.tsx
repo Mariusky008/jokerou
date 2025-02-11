@@ -4,9 +4,9 @@ import Link from 'next/link';
 export default function ReglesSecurite() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Règles de Sécurité - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>Règles de Sécurité - GRIM</title>
+      </>} />
 
       <div className="container mx-auto px-4 py-12">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">
@@ -94,7 +94,7 @@ export default function ReglesSecurite() {
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Contact sécurité</h2>
               <p className="text-gray-300">
                 Pour toute question sur la sécurité :<br />
-                Email : securite@jokerou.com<br />
+                Email : securite@grim.com<br />
                 Urgence : +33 1 23 45 67 89<br />
                 Support 24/7 via l'application
               </p>

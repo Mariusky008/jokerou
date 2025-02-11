@@ -4,9 +4,9 @@ import Link from 'next/link';
 export default function ConditionsUtilisation() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Conditions d'Utilisation - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>Conditions d'Utilisation - Grim</title>
+      </>} />
 
       <div className="container mx-auto px-4 py-12">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">
@@ -22,7 +22,7 @@ export default function ConditionsUtilisation() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Inscription et compte</h2>
               <p className="text-gray-300 mb-4">
-                Pour utiliser Jokerou, vous devez :<br />
+                Pour utiliser Grim, vous devez :<br />
                 - Être âgé d'au moins 16 ans<br />
                 - Créer un compte avec des informations exactes<br />
                 - Maintenir la confidentialité de vos identifiants<br />
@@ -66,7 +66,7 @@ export default function ConditionsUtilisation() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Sanctions</h2>
               <p className="text-gray-300">
-                En cas de non-respect des conditions d'utilisation, Jokerou se réserve le droit de :<br />
+                En cas de non-respect des conditions d'utilisation, Grim se réserve le droit de :<br />
                 - Avertir l'utilisateur<br />
                 - Suspendre temporairement le compte<br />
                 - Bannir définitivement l'utilisateur<br />
@@ -77,7 +77,7 @@ export default function ConditionsUtilisation() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Modifications des conditions</h2>
               <p className="text-gray-300">
-                Jokerou se réserve le droit de modifier ces conditions à tout moment. Les utilisateurs seront informés des changements importants par email et devront les accepter pour continuer à utiliser le service.
+                Grim se réserve le droit de modifier ces conditions à tout moment. Les utilisateurs seront informés des changements importants par email et devront les accepter pour continuer à utiliser le service.
               </p>
             </section>
 
@@ -85,8 +85,8 @@ export default function ConditionsUtilisation() {
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Contact</h2>
               <p className="text-gray-300">
                 Pour toute question concernant ces conditions d'utilisation :<br />
-                Email : legal@jokerou.com<br />
-                Support : support@jokerou.com
+                Email : legal@grim.com<br />
+                Support : support@grim.com
               </p>
             </section>
           </div>

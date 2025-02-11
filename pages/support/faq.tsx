@@ -7,8 +7,8 @@ const faqs = [
     category: "Général",
     questions: [
       {
-        q: "Qu'est-ce que Jokerou ?",
-        a: "Jokerou est un jeu de cache-cache urbain en temps réel qui se joue via votre smartphone. Les joueurs sont divisés en deux équipes : les Chasseurs et le Joker, et doivent utiliser stratégie et agilité pour gagner."
+        q: "Qu'est-ce que Grim ?",
+        a: "Grim est un jeu de cache-cache urbain en temps réel qui se joue via votre smartphone. Les joueurs sont divisés en deux équipes : les Chasseurs et le Joker, et doivent utiliser stratégie et agilité pour gagner."
       },
       {
         q: "Comment commencer à jouer ?",
@@ -89,9 +89,9 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>FAQ - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>FAQ - GRIM</title>
+      </>} />
 
       <div className="container mx-auto px-4 py-12">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">

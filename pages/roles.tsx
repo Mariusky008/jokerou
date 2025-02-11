@@ -15,7 +15,7 @@ interface Player {
   id: string;
   name: string;
   avatar: string;
-  role?: 'joker' | 'hunter' | null;
+  role?: 'grim' | 'hunter' | 'illusionist' | 'informer' | 'saboteur' | null;
   isReady: boolean;
   level: number;
 }
@@ -23,7 +23,7 @@ interface Player {
 export default function Roles() {
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
-  const [role, setRole] = useState<'joker' | 'hunter' | null>(null);
+  const [role, setRole] = useState<'grim' | 'hunter' | 'illusionist' | 'informer' | 'saboteur' | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -66,24 +66,55 @@ export default function Roles() {
   const chatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Simuler l'attribution aléatoire d'un rôle
-    const randomRole = Math.random() < 0.2 ? 'joker' : 'hunter';
-    setRole(randomRole);
+    // Distribution des rôles en fonction du niveau et du nombre de joueurs
+    const distributeRoles = () => {
+      const eligiblePlayers = players.filter(p => p.level >= 10);
+      const totalPlayers = players.length;
+      
+      // Toujours un Grim
+      let availableRoles = ['grim'];
+      
+      // Ajouter les rôles spéciaux si assez de joueurs de niveau 10+
+      if (eligiblePlayers.length >= 2) {
+        // Maximum un rôle spécial par partie
+        const specialRole = Math.random() < 0.3 ? // 30% de chance d'avoir un rôle spécial
+          ['illusionist', 'informer', 'saboteur'][Math.floor(Math.random() * 3)] :
+          null;
+        if (specialRole) availableRoles.push(specialRole);
+      }
+      
+      // Le reste sont des chasseurs
+      while (availableRoles.length < totalPlayers) {
+        availableRoles.push('hunter');
+      }
 
+      // Mélanger les rôles
+      availableRoles.sort(() => Math.random() - 0.5);
+
+      // Attribuer les rôles aux joueurs
+      const assignedPlayers = players.map((player, index) => {
+        const role = availableRoles[index];
+        // Vérifier le niveau minimum pour les rôles spéciaux
+        if (['illusionist', 'informer', 'saboteur'].includes(role) && player.level < 10) {
+          return { ...player, role: 'hunter' };
+        }
+        return { ...player, role };
+      });
+
+      setPlayers(assignedPlayers);
+      // Définir le rôle du joueur actuel
+      const currentPlayerRole = assignedPlayers.find(p => p.id === '1')?.role;
+      setRole(currentPlayerRole || 'hunter');
+    };
+
+    distributeRoles();
+    
     // Compte à rebours avant la révélation
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           setIsRevealed(true);
-          // Simuler l'attribution des rôles aux autres joueurs
-          setPlayers(prevPlayers => 
-            prevPlayers.map((player, index) => ({
-              ...player,
-              role: index === 0 ? randomRole : 'hunter'
-            }))
-          );
-          // Rediriger vers la page de jeu après 45 secondes
           setTimeout(() => {
             router.push('/game');
           }, 45000);
@@ -118,8 +149,8 @@ export default function Roles() {
   };
 
   const roleInfo = {
-    joker: {
-      title: '🎭 Vous êtes le Joker !',
+    grim: {
+      title: '🎭 Vous êtes le Grim !',
       description: 'Votre mission : échapper aux chasseurs pendant 60 minutes dans la zone délimitée.',
       powers: [
         'Mode Fantôme (1x) : Invisibilité pendant 30 secondes',
@@ -134,17 +165,62 @@ export default function Roles() {
     },
     hunter: {
       title: '🎯 Vous êtes un Chasseur !',
-      description: 'Votre mission : traquer et capturer le Joker dans la zone délimitée.',
+      description: 'Votre mission : traquer et capturer le Grim dans la zone délimitée.',
       powers: [
-        'Radar Joker (1x) : Position exacte pendant 10 secondes',
+        'Radar Grim (1x) : Position exacte pendant 10 secondes',
         'Indice de Distance : Notification de proximité toutes les 10 minutes',
       ],
       rules: [
         'Restez dans la zone délimitée (élimination immédiate en cas de sortie)',
         'Coordonnez-vous avec les autres chasseurs',
-        'Approchez-vous à moins de 50 mètres du Joker pour gagner'
+        'Approchez-vous à moins de 50 mètres du Grim pour gagner'
       ],
       color: 'from-blue-500 to-green-500'
+    },
+    illusionist: {
+      title: '🎪 Vous êtes l\'Illusionniste !',
+      description: 'Votre mission : aider secrètement le Grim tout en maintenant votre couverture de chasseur.',
+      powers: [
+        'Faux Signal (2x) : Créez un leurre du Grim sur la carte',
+        'Brouillage (1x) : Perturbez les communications des Chasseurs',
+        'Couverture (1x) : Masquez temporairement votre statut'
+      ],
+      rules: [
+        'Maintenez votre couverture auprès des autres chasseurs',
+        'Coordonnez-vous secrètement avec le Grim',
+        'Évitez d\'être découvert par les autres chasseurs'
+      ],
+      color: 'from-indigo-500 to-purple-500'
+    },
+    informer: {
+      title: '🔍 Vous êtes l\'Informateur !',
+      description: 'Votre mission : vendez des informations aux deux camps pour maximiser vos gains.',
+      powers: [
+        'Radar Avancé (3x) : Détectez tous les joueurs dans un rayon',
+        'Marchandage (∞) : Proposez des informations aux autres joueurs',
+        'Anonymat (2x) : Cachez votre identité lors des échanges'
+      ],
+      rules: [
+        'Restez neutre dans le conflit',
+        'Vendez vos informations au plus offrant',
+        'Gérez votre réputation auprès des deux camps'
+      ],
+      color: 'from-yellow-500 to-orange-500'
+    },
+    saboteur: {
+      title: '⚡ Vous êtes le Saboteur !',
+      description: 'Votre mission : perturbez la traque en plaçant des pièges stratégiques.',
+      powers: [
+        'Piège Paralysant (3x) : Immobilisez temporairement un joueur',
+        'Zone de Brouillage (2x) : Désactivez les pouvoirs dans une zone',
+        'Sabotage (1x) : Désactivez le pouvoir d\'un joueur ciblé'
+      ],
+      rules: [
+        'Placez vos pièges stratégiquement',
+        'Gérez vos ressources de pièges',
+        'Créez le chaos dans la traque'
+      ],
+      color: 'from-red-500 to-pink-500'
     }
   };
 
@@ -300,7 +376,7 @@ export default function Roles() {
                     <div className="flex items-center gap-2">
                       {isRevealed && player.role && (
                         <div className="text-2xl">
-                          {player.role === 'joker' ? '🎭' : '🎯'}
+                          {player.role === 'grim' ? '🎭' : player.role === 'hunter' ? '🎯' : player.role === 'illusionist' ? '🎪' : player.role === 'informer' ? '🔍' : '⚡'}
                         </div>
                       )}
                       <div className={`w-3 h-3 rounded-full ${player.isReady ? 'bg-green-500' : 'bg-red-500'}`}></div>

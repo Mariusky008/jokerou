@@ -10,8 +10,8 @@ const initialPlayers = [
   {
     id: 1,
     avatar: "🎭",
-    role: "joker",
-    name: "Le Joker",
+    role: "Grim",
+    name: "Le Grim",
     position: { x: 30, y: 40 }
   },
   {
@@ -70,7 +70,7 @@ export default function Home() {
   const testimonials = [
     {
       name: "Thomas L.",
-      role: "Joker Légendaire",
+      role: "Grim Légendaire",
       quote: "La meilleure expérience de jeu urbain ! L'adrénaline est au maximum quand on est poursuivi.",
       avatar: "👤",
       rating: 5
@@ -143,24 +143,39 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
-    <Head key="head">
-      <title key="title">Jokerou - Le jeu de cache-cache urbain révolutionnaire</title>
-      <meta key="description" name="description" content="Découvrez Jokerou, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
-      <link key="favicon" rel="icon" href="/favicon.ico" />
-    </Head>
+      <Head children={<>
+        <title>GRIM - Le jeu de traque urbain révolutionnaire</title>
+        <meta name="description" content="Découvrez Jokerou, le jeu qui transforme votre ville en terrain de jeu. Cache-cache en temps réel, pouvoirs spéciaux et expérience unique garantie !" />
+        <link rel="icon" href="/favicon.ico" />
+      </>} />
 
       {/* Modal des règles */}
       <GameRules isOpen={showRules} onClose={() => setShowRules(false)} />
 
       {/* Hero Section avec Vidéo Background */}
       <div className="relative h-screen overflow-hidden">
-        {/* Fond animé avec motif de carte de ville */}
+        {/* Image de fond avec effets */}
         <div className="absolute inset-0">
+          <Image
+            src="/images/portrait.png"
+            alt="Grim Background"
+            layout="fill"
+            objectFit="cover"
+            quality={100}
+            priority
+            className="opacity-85 brightness-125"
+            sizes="100vw"
+            style={{
+              objectPosition: 'center',
+              width: '100%',
+              height: '100%'
+            }}
+          />
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-black/95 to-pink-900/90">
             {/* Motif de grille représentant les rues */}
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20 animate-[pulse_4s_ease-in-out_infinite]"></div>
             
-            {/* Points d'intérêt animés remplacés par des avatars */}
+            {/* Points d'intérêt animés */}
             <div className="absolute inset-0 z-0">
               {playerPositions.map((player) => (
                 <motion.div
@@ -318,7 +333,7 @@ export default function Home() {
             {/* Titre principal avec effet de glitch */}
             <h1 className="text-8xl font-black mb-8 relative">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 animate-[textShadow_5s_ease-in-out_infinite]">
-                Trouver le GRIM
+                Le GRIM
               </span>
             </h1>
 
@@ -329,8 +344,8 @@ export default function Home() {
               transition={{ delay: 0.8 }}
             >
               <p className="text-3xl font-light text-gray-300 max-w-3xl mx-auto leading-relaxed mb-12">
-                Vous aurez 1 heure pour traquer et trouver le GRIM dans votre ville.<br/>
-                Le premier jeu de cache-cache urbain
+                1 heure pour traquer et trouver le GRIM dans votre ville.<br/>
+
                 <motion.span
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -388,74 +403,29 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_2px,_rgba(0,0,0,0.2)_3px)] bg-[length:30px_30px]"></div>
       </div>
 
-      {/* Section Fonctionnalités */}
-      <section className="py-20 bg-gradient-to-b from-black to-purple-900/20">
-        <div className="container mx-auto px-4">
-          <motion.div
+      {/* Section Comment ça marche */}
+      <section className="py-24 px-4 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text"
           >
-            <h2 className="text-4xl font-bold mb-4">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
-                Une expérience de jeu révolutionnaire
-              </span>
-            </h2>
-            <p className="text-xl text-gray-400">Découvrez des fonctionnalités uniques qui redéfinissent le cache-cache</p>
-          </motion.div>
+            Comment ça marche ?
+          </motion.h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.2 }}
-                whileHover={{ scale: 1.05, rotateY: 5 }}
-                className={`bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 shadow-xl hover:shadow-purple-500/20 transition-all duration-300 ${index === activeFeature ? 'ring-2 ring-purple-500' : ''}`}
-              >
-                <div className="text-5xl mb-6">{feature.icon}</div>
-                <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-300">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Section Comment ça marche */}
-      <section className="py-20 bg-gradient-to-b from-purple-900/20 to-black">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl font-bold mb-4">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
-                Comment ça marche ?
-              </span>
-            </h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20">
+              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
                 <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">1</div>
-                <h3 className="text-xl font-bold mb-4 mt-4">Inscrivez-vous</h3>
-                <p className="text-gray-400">Créez votre compte et rejoignez la communauté des joueurs dans votre ville</p>
+                <h3 className="text-xl font-bold mb-4 mt-4">Créez votre compte</h3>
+                <p className="text-gray-400">Rejoignez la communauté GRIM et préparez-vous à vivre une expérience de jeu unique en plein air. Quelques clics suffisent pour commencer l'aventure.</p>
               </div>
             </motion.div>
 
@@ -466,10 +436,24 @@ export default function Home() {
               transition={{ delay: 0.2 }}
               className="relative"
             >
-              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20">
+              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
                 <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">2</div>
-                <h3 className="text-xl font-bold mb-4 mt-4">Attendez 18h</h3>
-                <p className="text-gray-400">Chaque soir, une nouvelle partie commence. Découvrez votre rôle : Joker ou Chasseur</p>
+                <h3 className="text-xl font-bold mb-4 mt-4">Choisissez votre partie</h3>
+                <p className="text-gray-400">Consultez les créneaux disponibles dans votre ville et rejoignez une partie. Découvrez votre rôle mystère : serez-vous le GRIM ou l'un des Chasseurs ?</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="relative"
+            >
+              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
+                <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">3</div>
+                <h3 className="text-xl font-bold mb-4 mt-4">Lancez la chasse</h3>
+                <p className="text-gray-400">Au signal de départ, la partie de 60 minutes commence ! Les Chasseurs partent à la recherche du GRIM qui doit leur échapper dans les rues de la ville.</p>
               </div>
             </motion.div>
 
@@ -480,127 +464,28 @@ export default function Home() {
               transition={{ delay: 0.4 }}
               className="relative"
             >
-              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20">
-                <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">3</div>
-                <h3 className="text-xl font-bold mb-4 mt-4">Jouez !</h3>
-                <p className="text-gray-400">Utilisez vos pouvoirs, coordonnez-vous et vivez une expérience unique</p>
+              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
+                <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">4</div>
+                <h3 className="text-xl font-bold mb-4 mt-4">Utilisez vos pouvoirs</h3>
+                <p className="text-gray-400">Déployez des capacités spéciales, coordonnez-vous avec votre équipe via le talkie-walkie et exploitez les zones stratégiques pour remporter la victoire !</p>
               </div>
             </motion.div>
           </div>
 
-          {/* Nouveau bouton des règles */}
+          {/* Bouton Règles du jeu */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mt-12"
+            className="mt-12 flex justify-center"
           >
             <button
               onClick={() => setShowRules(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-lg py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2 mx-auto"
+              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 flex items-center gap-3 shadow-xl hover:shadow-2xl"
             >
-              <span>📜</span>
-              Consulter les règles complètes
+              <span className="text-2xl">📜</span>
+              Voir les règles complètes du jeu
             </button>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Nouvelle section : Modes de jeu */}
-      <section className="py-20 bg-gradient-to-b from-purple-900/20 to-black">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl font-bold mb-4">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
-                Modes de jeu
-              </span>
-            </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Jouez en solo ou en équipe, choisissez votre style !
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
-            >
-              <div className="text-4xl mb-6">🎮</div>
-              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
-                Mode Solo
-              </h3>
-              <p className="text-gray-300 leading-relaxed mb-6">
-                Vivez l'expérience classique : parcourez la ville en solitaire, utilisez vos pouvoirs et votre stratégie pour échapper aux chasseurs ou traquer le Joker.
-              </p>
-              <ul className="space-y-3 text-gray-400">
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-400">•</span>
-                  Liberté de mouvement totale
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-400">•</span>
-                  Prise de décision rapide
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-400">•</span>
-                  Parfait pour les joueurs expérimentés
-                </li>
-              </ul>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
-            >
-              <div className="text-4xl mb-6">👥</div>
-              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
-                Mode Duo Stratégique
-              </h3>
-              <p className="text-gray-300 leading-relaxed mb-6">
-                Faites équipe avec un ami ! L'un sur le terrain, l'autre derrière son écran pour une expérience de jeu unique combinant action et stratégie.
-              </p>
-              <ul className="space-y-3 text-gray-400">
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-400">•</span>
-                  Un joueur sur le terrain suit les instructions
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-400">•</span>
-                  Un stratège à distance analyse la carte et coordonne les actions
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-400">•</span>
-                  Communication en temps réel pour une meilleure coordination
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-400">•</span>
-                  Parfait pour combiner réflexion et action
-                </li>
-              </ul>
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 text-center"
-          >
-            <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-6 rounded-2xl inline-block backdrop-blur-sm border border-purple-500/20">
-              <p className="text-gray-300">
-                <span className="text-purple-400 font-bold">Conseil : </span>
-                Le mode duo est recommandé pour les nouveaux joueurs, permettant une meilleure prise en main du jeu et des stratégies plus élaborées.
-              </p>
-            </div>
           </motion.div>
         </div>
       </section>
@@ -919,7 +804,7 @@ export default function Home() {
                     className="absolute top-1/4 left-1/3 flex flex-col items-center"
                   >
                     <div className="bg-red-500 p-2 rounded-lg text-sm font-bold mb-2">
-                      🏃‍♂️ Joker repéré
+                      🏃‍♂️ Grim repéré
                     </div>
                     <div className="w-4 h-4 bg-red-500 rounded-full" />
                   </motion.div>
@@ -937,7 +822,7 @@ export default function Home() {
 
                   {/* Indicateur de distance */}
                   <div className="absolute bottom-4 right-4 bg-black/80 p-3 rounded-xl backdrop-blur-sm">
-                    <div className="text-sm font-bold text-purple-400">Distance du Joker</div>
+                    <div className="text-sm font-bold text-purple-400">Distance du Grim</div>
                     <div className="text-2xl font-bold">150m</div>
                   </div>
                 </div>
@@ -954,7 +839,7 @@ export default function Home() {
                 <div className="bg-gray-900/80 backdrop-blur-sm rounded-xl p-4 flex items-center gap-3">
                   <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">🎭</div>
                   <div className="text-sm">
-                    <div className="font-bold">Joker</div>
+                    <div className="font-bold">Grim</div>
                     <div className="text-purple-400">Camouflage : 15s</div>
                   </div>
                 </div>
@@ -979,6 +864,298 @@ export default function Home() {
           </div>
         </div>
       </motion.section>
+
+      {/* Section Rencontres après-jeu */}
+      <section className="relative overflow-hidden">
+        {/* Arrière-plan lumineux et coloré */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 via-indigo-500/30 to-pink-500/30"></div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: [0.1, 0.3, 0.1],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)]"
+            style={{ 
+              '--tw-gradient-from': 'rgba(139, 92, 246, 0.3)'
+            } as React.CSSProperties}
+          />
+          <motion.div 
+            animate={{ 
+              rotate: [0, 360],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(236,72,153,0.2),transparent)]"
+          />
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.h2 
+              className="text-4xl font-bold tracking-tight text-white sm:text-5xl"
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              Au-delà du virtuel
+            </motion.h2>
+            <motion.div 
+              className="mt-6 max-w-3xl mx-auto"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <p className="text-2xl text-white/90">
+                Prolongez l'expérience GRIM dans le monde réel
+              </p>
+            </motion.div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
+            {/* Carte Débriefing */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.02 }}
+              className="relative group"
+            >
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/50 to-indigo-600/50 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+              <div className="relative bg-white/10 backdrop-blur-xl p-8 rounded-2xl border border-white/20 hover:border-purple-400/50 transition-all duration-300">
+                <motion.div 
+                  className="flex items-center justify-between mb-6"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  <h3 className="text-2xl font-semibold text-white">Débriefing stratégique</h3>
+                  <span className="text-3xl">🎯</span>
+                </motion.div>
+                <ul className="space-y-4 text-white/90">
+                  <motion.li 
+                    className="flex items-start"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <span className="mr-3 text-purple-300">•</span>
+                    <span>Rencontrez vos coéquipiers 5 minutes après chaque partie</span>
+                  </motion.li>
+                  <motion.li 
+                    className="flex items-start"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <span className="mr-3 text-purple-300">•</span>
+                    <span>Analysez les stratégies et partagez vos tactiques</span>
+                  </motion.li>
+                  <motion.li 
+                    className="flex items-start"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    <span className="mr-3 text-purple-300">•</span>
+                    <span>Développez votre réseau de joueurs locaux</span>
+                  </motion.li>
+                </ul>
+              </div>
+            </motion.div>
+
+            {/* Carte Communauté */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.02 }}
+              className="relative group"
+            >
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-600/50 to-purple-600/50 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+              <div className="relative bg-white/10 backdrop-blur-xl p-8 rounded-2xl border border-white/20 hover:border-pink-400/50 transition-all duration-300">
+                <motion.div 
+                  className="flex items-center justify-between mb-6"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+                >
+                  <h3 className="text-2xl font-semibold text-white">Communauté locale</h3>
+                  <motion.span 
+                    className="text-3xl"
+                    animate={{ rotate: [0, 20, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    🌟
+                  </motion.span>
+                </motion.div>
+                <ul className="space-y-4 text-white/90">
+                  <motion.li 
+                    className="flex items-start"
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <span className="mr-3 text-pink-300">•</span>
+                    <span>Découvrez les lieux de rencontre de votre ville</span>
+                  </motion.li>
+                  <motion.li 
+                    className="flex items-start"
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <span className="mr-3 text-pink-300">•</span>
+                    <span>Participez aux événements communautaires mensuels</span>
+                  </motion.li>
+                  <motion.li 
+                    className="flex items-start"
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    <span className="mr-3 text-pink-300">•</span>
+                    <span>Rejoignez une communauté de passionnés</span>
+                  </motion.li>
+                </ul>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Statistique */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-16 text-center"
+          >
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="inline-block bg-white/10 backdrop-blur-xl px-12 py-8 rounded-2xl border border-white/20"
+            >
+              <motion.p 
+                className="text-sm text-white/80 uppercase tracking-wide"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                Impact social
+              </motion.p>
+              <motion.p 
+                className="mt-3 text-5xl font-bold text-white"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                +60<span className="text-purple-400">%</span>
+              </motion.p>
+              <p className="mt-2 text-xl text-white/90">des joueurs ont créé des amitiés durables</p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Nouvelle section : Modes de jeu */}
+      <section className="py-20 bg-gradient-to-b from-purple-900/20 to-black">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold mb-4">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
+                Modes de jeu
+              </span>
+            </h2>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+              Jouez en solo ou en équipe, choisissez votre style !
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
+            >
+              <div className="text-4xl mb-6">🎮</div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                Mode Solo
+              </h3>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Vivez l'expérience classique : parcourez la ville en solitaire, utilisez vos pouvoirs et votre stratégie pour échapper aux chasseurs ou traquer le Joker.
+              </p>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Liberté de mouvement totale
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Prise de décision rapide
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Parfait pour les joueurs expérimentés
+                </li>
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
+            >
+              <div className="text-4xl mb-6">👥</div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                Mode Duo Stratégique
+              </h3>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Faites équipe avec un ami ! L'un sur le terrain, l'autre derrière son écran pour une expérience de jeu unique combinant action et stratégie.
+              </p>
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Un joueur sur le terrain suit les instructions
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Un stratège à distance analyse la carte et coordonne les actions
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Communication en temps réel pour une meilleure coordination
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-400">•</span>
+                  Parfait pour combiner réflexion et action
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 text-center"
+          >
+            <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-6 rounded-2xl inline-block backdrop-blur-sm border border-purple-500/20"
+            >
+              <p className="text-gray-300">
+                <span className="text-purple-400 font-bold">Conseil : </span>
+                Le mode duo est recommandé pour les nouveaux joueurs, permettant une meilleure prise en main du jeu et des stratégies plus élaborées.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Section Témoignages */}
       <section className="py-20 bg-gradient-to-b from-black to-purple-900/20">
@@ -1105,7 +1282,7 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-2xl text-gray-300 mb-12">
-              Rejoignez la communauté Jokerou et vivez une expérience de jeu unique
+              Rejoignez la communauté Grim et vivez une expérience de jeu unique
             </p>
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -1198,7 +1375,7 @@ export default function Home() {
                   </li>
                   <li>
                     <a href="mailto:contact@jokerou.com" className="hover:text-purple-400 transition-colors">
-                      contact@jokerou.com
+                      contact@grim.com
                     </a>
                     <p className="text-xs text-gray-500 mt-1">Notre équipe vous répond sous 24h</p>
                   </li>
@@ -1221,7 +1398,7 @@ export default function Home() {
             {/* Copyright et RGPD */}
             <div className="mt-12 pt-8 border-t border-purple-500/20 text-center">
               <p className="text-sm text-gray-400 mb-2">
-                © {new Date().getFullYear()} Jokerou. Tous droits réservés.
+                © {new Date().getFullYear()} Grim. Tous droits réservés.
               </p>
               <p className="text-xs text-gray-500">
                 Jokerou s'engage à protéger vos données personnelles conformément au RGPD.

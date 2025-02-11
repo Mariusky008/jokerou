@@ -4,9 +4,9 @@ import Link from 'next/link';
 export default function CharteJoueur() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Charte du Joueur - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>Charte du Joueur - GRIM</title>
+      </>} />
 
       <div className="container mx-auto px-4 py-12">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">
@@ -22,7 +22,7 @@ export default function CharteJoueur() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Valeurs fondamentales</h2>
               <p className="text-gray-300 mb-4">
-                En tant que joueur Jokerou, je m'engage à :<br />
+                En tant que joueur Grim, je m'engage à :<br />
                 - Respecter tous les participants<br />
                 - Faire preuve de fair-play<br />
                 - Jouer dans un esprit sportif<br />
@@ -93,7 +93,7 @@ export default function CharteJoueur() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Engagement</h2>
               <p className="text-gray-300">
-                En jouant à Jokerou, je m'engage à respecter cette charte et à contribuer à faire de ce jeu une expérience positive pour tous les participants.
+                En jouant à Grim, je m'engage à respecter cette charte et à contribuer à faire de ce jeu une expérience positive pour tous les participants.
               </p>
             </section>
           </div>

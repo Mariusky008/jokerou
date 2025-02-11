@@ -4,9 +4,9 @@ import Link from 'next/link';
 export default function MentionsLegales() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Mentions Légales - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>Mentions Légales - GRIM</title>
+      </>} />
 
       <div className="container mx-auto px-4 py-12">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">
@@ -22,11 +22,11 @@ export default function MentionsLegales() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Éditeur du site</h2>
               <p className="text-gray-300 mb-4">
-                Jokerou SAS<br />
+                GRIM SAS<br />
                 Capital social : 10 000€<br />
                 RCS Paris B 123 456 789<br />
                 Siège social : 123 Avenue des Jeux, 75001 Paris<br />
-                Email : contact@jokerou.com
+                Email : contact@grim.com
               </p>
               <p className="text-gray-300">
                 Directeur de la publication : Jean Dupont<br />
@@ -37,7 +37,7 @@ export default function MentionsLegales() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Hébergement</h2>
               <p className="text-gray-300">
-                Le site Jokerou est hébergé par :<br />
+                Le site grim est hébergé par :<br />
                 Amazon Web Services (AWS)<br />
                 38 Avenue John F. Kennedy<br />
                 L-1855 Luxembourg
@@ -47,10 +47,10 @@ export default function MentionsLegales() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Propriété intellectuelle</h2>
               <p className="text-gray-300 mb-4">
-                L'ensemble du contenu du site Jokerou (logo, textes, graphismes, images, vidéos, etc.) est protégé par le droit d'auteur. Toute reproduction ou représentation, totale ou partielle, du site ou de l'un des éléments qui le composent, sans l'autorisation expresse de Jokerou, est interdite et constituerait une contrefaçon sanctionnée par le Code de la propriété intellectuelle.
+                L'ensemble du contenu du site Grim (logo, textes, graphismes, images, vidéos, etc.) est protégé par le droit d'auteur. Toute reproduction ou représentation, totale ou partielle, du site ou de l'un des éléments qui le composent, sans l'autorisation expresse de Jokerou, est interdite et constituerait une contrefaçon sanctionnée par le Code de la propriété intellectuelle.
               </p>
               <p className="text-gray-300">
-                Les marques et logos figurant sur le site sont des marques déposées par Jokerou ou ses partenaires. Toute reproduction ou utilisation de ces marques sans autorisation expresse est interdite.
+                Les marques et logos figurant sur le site sont des marques déposées par Grim ou ses partenaires. Toute reproduction ou utilisation de ces marques sans autorisation expresse est interdite.
               </p>
             </section>
 
@@ -71,7 +71,7 @@ export default function MentionsLegales() {
             <section className="bg-gray-900 rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4 text-purple-400">Limitation de responsabilité</h2>
               <p className="text-gray-300">
-                Jokerou s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées sur son site. Toutefois, Jokerou ne peut garantir l'exactitude, la précision ou l'exhaustivité des informations mises à disposition sur le site. En conséquence, Jokerou décline toute responsabilité pour toute imprécision, inexactitude ou omission portant sur des informations disponibles sur le site.
+                Grim s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées sur son site. Toutefois, Jokerou ne peut garantir l'exactitude, la précision ou l'exhaustivité des informations mises à disposition sur le site. En conséquence, Jokerou décline toute responsabilité pour toute imprécision, inexactitude ou omission portant sur des informations disponibles sur le site.
               </p>
             </section>
 

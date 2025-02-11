@@ -10,38 +10,151 @@ const markerStyle = `
     background: none;
     border: none;
   }
+
   .marker-pin {
     width: 40px;
     height: 40px;
-    border-radius: 50% 50% 50% 50%;
-    background: #1a1a1a;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
+    border: 3px solid white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    border: 2px solid white;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transform-origin: center bottom;
+    transition: all 0.3s ease;
   }
+
+  .marker-pin:hover {
+    transform: scale(1.1);
+  }
+
   .marker-pin.joker {
-    background: linear-gradient(45deg, #8b5cf6, #ec4899);
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
+    animation: pulse 2s infinite;
   }
+
   .marker-pin.hunter {
-    background: linear-gradient(45deg, #3b82f6, #10b981);
+    background: linear-gradient(45deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
   }
+
   .marker-avatar {
-    font-size: 18px;
-    margin-bottom: 2px;
+    font-size: 20px;
+    z-index: 2;
   }
+
   .marker-level {
-    font-size: 9px;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 0px 4px;
-    border-radius: 8px;
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
     color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    }
+    50% {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    }
+  }
+`;
+
+// Styles CSS pour les zones spéciales
+const specialZoneStyle = `
+  .special-zone {
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .special-zone:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .special-zone.power {
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.4), rgba(236, 72, 153, 0.4));
+    animation: glow 2s infinite alternate;
+  }
+
+  .special-zone.bonus {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.4), rgba(37, 99, 235, 0.4));
+    animation: pulse-light 2s infinite;
+  }
+
+  .special-zone.trap {
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.4), rgba(185, 28, 28, 0.4));
+    animation: warning 1.5s infinite;
+  }
+
+  .special-zone.teleport {
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.4), rgba(5, 150, 105, 0.4));
+    animation: teleport-effect 3s infinite;
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.5),
+                 0 0 20px rgba(236, 72, 153, 0.5);
+    }
+    to {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.7),
+                 0 0 40px rgba(236, 72, 153, 0.7);
+    }
+  }
+
+  @keyframes pulse-light {
+    0% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.6;
+    }
+  }
+
+  @keyframes warning {
+    0% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes teleport-effect {
+    0% {
+      transform: rotate(0deg) scale(1);
+    }
+    50% {
+      transform: rotate(180deg) scale(1.1);
+    }
+    100% {
+      transform: rotate(360deg) scale(1);
+    }
   }
 `;
 
@@ -124,6 +237,28 @@ function LocationUpdater({ onPositionChange }: { onPositionChange: (pos: [number
   }, [map, onPositionChange]);
 
   return null;
+}
+
+// Ajouter le composant ZoomControl avant le composant Map
+function ZoomControl() {
+  const map = useMap();
+  
+  return (
+    <div className="absolute right-4 bottom-4 flex flex-col gap-2 z-[1000]">
+      <button 
+        onClick={() => map.zoomIn()}
+        className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
+        +
+      </button>
+      <button 
+        onClick={() => map.zoomOut()}
+        className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
+        -
+      </button>
+    </div>
+  );
 }
 
 export default function Map({ showJoker, onPlayerSelect, specialZones: initialSpecialZones = [] }: MapProps) {
@@ -295,7 +430,7 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
   // Créer une icône personnalisée pour les zones spéciales
   const createSpecialZoneIcon = (zone: SpecialZone) => {
     const markerHtml = `
-      <div class="special-zone ${zone.type} ${zone.isActive ? 'active' : ''}">
+      <div class="special-zone ${zone.type} ${zone.isActive ? 'active' : ''}" style="transform: none;">
         <span class="zone-icon">${zone.icon}</span>
       </div>
     `;
@@ -327,6 +462,16 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
       })));
     }
   }, [currentPosition, initialSpecialZones]);
+
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = markerStyle + specialZoneStyle;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   return (
     <div className="h-[600px] rounded-2xl overflow-hidden relative">
@@ -514,6 +659,16 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
               key={zone.id}
               position={zone.position}
               icon={createSpecialZoneIcon(zone)}
+              eventHandlers={{
+                add: (e) => {
+                  // Désactiver les animations Leaflet par défaut
+                  const element = e.target.getElement();
+                  if (element) {
+                    element.style.transition = 'none';
+                    element.style.transform = 'none';
+                  }
+                }
+              }}
             >
               <Popup>
                 <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
@@ -529,21 +684,8 @@ export default function Map({ showJoker, onPlayerSelect, specialZones: initialSp
           )
         ))}
 
-        {/* Contrôles de zoom personnalisés */}
-        <div className="absolute right-4 bottom-4 flex flex-col gap-2 z-[1000]">
-          <button 
-            onClick={() => map.zoomIn()}
-            className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            +
-          </button>
-          <button 
-            onClick={() => map.zoomOut()}
-            className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-xl hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            -
-          </button>
-        </div>
+        {/* Remplacer les boutons de zoom existants par le composant ZoomControl */}
+        <ZoomControl />
       </MapContainer>
 
       {/* Fenêtre de messagerie privée */}

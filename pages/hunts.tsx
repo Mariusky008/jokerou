@@ -227,9 +227,9 @@ export default function Hunts() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Chasses disponibles - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>Chasses disponibles - GRIM</title>
+      </>} />
 
       {/* Notification */}
       <AnimatePresence>

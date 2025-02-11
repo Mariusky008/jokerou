@@ -37,9 +37,9 @@ const supportCategories = [
 export default function Support() {
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Support - Jokerou</title>
-      </Head>
+      <title>
+        <title>Support - GRIM</title>
+      </title>
 
       <div className="container mx-auto px-4 py-12">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">

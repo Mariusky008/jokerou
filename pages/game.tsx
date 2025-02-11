@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
+import TalkieWalkie from '../components/TalkieWalkie';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const MapComponent = dynamic(() => import('../components/Map'), {
@@ -125,6 +126,62 @@ export default function Game() {
     }
   ]);
 
+  const [currentPlayer] = useState<Player>({
+    id: 'current',
+    name: 'Vous',
+    avatar: '👤',
+    role: isJoker ? 'joker' : 'hunter',
+    stats: {
+      gamesPlayed: 42,
+      winRate: 75,
+      level: 15,
+      xp: 15000
+    },
+    description: 'Votre profil'
+  });
+
+  const [players] = useState<Player[]>([
+    {
+      id: 'player1',
+      name: 'Alex',
+      avatar: '👤',
+      role: 'hunter',
+      stats: {
+        gamesPlayed: 23,
+        winRate: 65,
+        level: 8,
+        xp: 8000
+      },
+      description: 'Chasseur expérimenté'
+    },
+    {
+      id: 'player2',
+      name: 'Marie',
+      avatar: '👤',
+      role: 'hunter',
+      stats: {
+        gamesPlayed: 35,
+        winRate: 80,
+        level: 12,
+        xp: 12000
+      },
+      description: 'Chasseuse redoutable'
+    },
+    {
+      id: 'player3',
+      name: 'Lucas',
+      avatar: '👤',
+      role: 'hunter',
+      stats: {
+        gamesPlayed: 28,
+        winRate: 70,
+        level: 10,
+        xp: 10000
+      },
+      description: 'Chasseur stratégique'
+    }
+  ]);
+
   useEffect(() => {
     // Timer pour le jeu et les cooldowns
     const timer = setInterval(() => {
@@ -172,13 +229,20 @@ export default function Game() {
         if (zone.nextAppearance <= 0) {
           // Si le temps est écoulé, activer la zone pour 1 minute
           if (!zone.isActive) {
+            // Jouer le son d'activation de zone
+            if (typeof window !== 'undefined' && (window as any).playZoneSound) {
+              (window as any).playZoneSound('activation');
+            }
             return {
               ...zone,
               isActive: true,
               nextAppearance: 60 // 1 minute d'activation
             };
           } else {
-            // Après 1 minute d'activation, désactiver et réinitialiser le timer
+            // Jouer le son de désactivation de zone
+            if (typeof window !== 'undefined' && (window as any).playZoneSound) {
+              (window as any).playZoneSound('deactivation');
+            }
             return {
               ...zone,
               isActive: false,
@@ -206,11 +270,21 @@ export default function Game() {
     setPowers((prev) =>
       prev.map((power) => {
         if (power.id === powerId && power.remainingUses > 0 && power.cooldown === 0) {
+          // Jouer le son d'activation du pouvoir
+          if (typeof window !== 'undefined' && (window as any).playPowerSound) {
+            (window as any).playPowerSound('activation');
+          }
           return {
             ...power,
             remainingUses: power.remainingUses - 1,
             cooldown: powerId === 'ghost' ? 30 : 15
           };
+        }
+        // Si le cooldown vient de se terminer, jouer le son de recharge
+        if (power.id === powerId && power.cooldown === 1) {
+          if (typeof window !== 'undefined' && (window as any).playPowerSound) {
+            (window as any).playPowerSound('recharge');
+          }
         }
         return power;
       })
@@ -228,6 +302,10 @@ export default function Game() {
       };
       setMessages(prev => [...prev, newMessage]);
       setGlobalMessage('');
+      // Jouer le son de notification globale
+      if (typeof window !== 'undefined' && (window as any).playMessageNotification) {
+        (window as any).playMessageNotification(false);
+      }
     }
   };
 
@@ -244,14 +322,52 @@ export default function Game() {
       };
       setMessages(prev => [...prev, newMessage]);
       setPrivateMessage('');
+      // Jouer le son de notification privée
+      if (typeof window !== 'undefined' && (window as any).playMessageNotification) {
+        (window as any).playMessageNotification(true);
+      }
     }
+  };
+
+  // Simuler la réception de messages (pour démonstration)
+  useEffect(() => {
+    const simulateIncomingMessage = () => {
+      const isPrivate = Math.random() > 0.5;
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        author: players[Math.floor(Math.random() * players.length)].name,
+        content: isPrivate ? "Message privé de test" : "Message global de test",
+        timestamp: new Date(),
+        isPrivate,
+        recipient: isPrivate ? 'Vous' : undefined
+      };
+      setMessages(prev => [...prev, newMessage]);
+      // Jouer le son de notification approprié
+      if (typeof window !== 'undefined' && (window as any).playMessageNotification) {
+        (window as any).playMessageNotification(isPrivate);
+      }
+    };
+
+    // Simuler un message toutes les 10 secondes (pour démonstration)
+    const interval = setInterval(simulateIncomingMessage, 10000);
+    return () => clearInterval(interval);
+  }, [players]);
+
+  const handleMessageStart = () => {
+    // Ajouter un effet visuel ou sonore quand quelqu'un commence à parler
+    console.log('Début du message audio');
+  };
+
+  const handleMessageEnd = () => {
+    // Ajouter un effet visuel ou sonore quand quelqu'un arrête de parler
+    console.log('Fin du message audio');
   };
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>En Jeu - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>En Jeu - GRIM</title>
+      </>} />
 
       <div className="container mx-auto px-4 py-8">
         {/* En-tête du jeu */}
@@ -266,10 +382,10 @@ export default function Game() {
             </div>
             <div className="ml-4">
               <h1 className="text-2xl font-bold">
-                {isJoker ? 'Vous êtes le Joker' : 'Vous êtes un Chasseur'}
+                {isJoker ? 'Vous êtes le Grim' : 'Vous êtes un Chasseur'}
               </h1>
               <p className="text-gray-400">
-                {isJoker ? 'Échappez aux chasseurs' : 'Traquez le Joker'}
+                {isJoker ? 'Échappez aux chasseurs' : 'Traquez le Grim'}
               </p>
             </div>
           </div>
@@ -308,7 +424,7 @@ export default function Game() {
                   key={power.id}
                   onClick={() => usePower(power.id)}
                   disabled={power.remainingUses === 0 || power.cooldown > 0}
-                  className={`bg-gray-900 p-4 rounded-xl flex items-center ${
+                  className={`power-button bg-gray-900 p-4 rounded-xl flex items-center ${
                     power.remainingUses === 0
                       ? 'opacity-50 cursor-not-allowed'
                       : power.cooldown > 0
@@ -316,15 +432,19 @@ export default function Game() {
                       : 'hover:bg-gray-800'
                   }`}
                 >
-                  <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-2xl">
+                  <div className="power-icon w-12 h-12 rounded-full flex items-center justify-center text-2xl">
                     {power.icon}
                   </div>
                   <div className="ml-4 flex-1">
-                    <h3 className="font-bold">{power.name}</h3>
+                    <h3 className="font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                      {power.name}
+                    </h3>
                     <p className="text-sm text-gray-400">{power.description}</p>
                     {power.cooldown > 0 && (
-                      <div className="text-sm text-purple-400">
-                        Cooldown: {power.cooldown}s
+                      <div className="power-cooldown mt-1 text-sm">
+                        <span className="text-purple-400">
+                          Cooldown: {power.cooldown}s
+                        </span>
                       </div>
                     )}
                   </div>
@@ -332,7 +452,9 @@ export default function Game() {
                     <div className="text-sm text-gray-400">
                       Utilisations restantes
                     </div>
-                    <div className="text-xl font-bold">{power.remainingUses}</div>
+                    <div className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                      {power.remainingUses}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -352,25 +474,26 @@ export default function Game() {
                 {specialZones.map((zone) => (
                   <div
                     key={zone.id}
-                    className={`bg-gray-900 p-4 rounded-xl flex items-center ${
-                      zone.isActive ? 'ring-2 ring-purple-500' : ''
+                    className={`zone-card bg-gray-900 p-4 rounded-xl flex items-center ${
+                      zone.isActive ? 'active' : ''
                     }`}
                   >
-                    <div className={`w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center text-2xl ${
-                      zone.isActive ? 'animate-pulse' : 'opacity-50'
+                    <div className={`zone-icon w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                      zone.isActive ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-800'
                     }`}>
                       {zone.icon}
                     </div>
                     <div className="ml-4 flex-1">
-                      <h3 className="font-bold">{zone.name}</h3>
+                      <h3 className="font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                        {zone.name}
+                      </h3>
                       <p className="text-sm text-gray-400">{zone.description}</p>
-                      {!zone.isActive && (
-                        <div className="text-sm text-purple-400">
+                      {!zone.isActive ? (
+                        <div className="zone-timer mt-1">
                           Apparaît dans: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
                         </div>
-                      )}
-                      {zone.isActive && (
-                        <div className="text-sm text-green-400">
+                      ) : (
+                        <div className="zone-timer mt-1 active">
                           Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
                         </div>
                       )}
@@ -481,6 +604,14 @@ export default function Game() {
           </div>
         </div>
       </div>
+
+      {/* Ajouter le composant TalkieWalkie */}
+      <TalkieWalkie
+        currentPlayer={currentPlayer}
+        players={players}
+        onMessageStart={handleMessageStart}
+        onMessageEnd={handleMessageEnd}
+      />
 
       <style jsx global>{`
         .shadow-neon {

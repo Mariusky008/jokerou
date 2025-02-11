@@ -31,9 +31,9 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4">
-      <Head>
-        <title>{isLogin ? 'Connexion' : 'Inscription'} - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>{isLogin ? 'Connexion' : 'Inscription'} - GRIM</title>
+      </>} />
 
       <Link href="/" className="mb-8 text-purple-500 hover:text-purple-400">
         ← Retour à l'accueil

@@ -25,9 +25,9 @@ export default function SignalerProbleme() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Signaler un Problème - Jokerou</title>
-      </Head>
+      <Head children={<>
+        <title>Signaler un Problème - GRIM</title>
+      </>} />
 
       <div className="container mx-auto px-4 py-12">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">
@@ -128,7 +128,7 @@ export default function SignalerProbleme() {
               <p className="text-gray-300">
                 Pour une urgence immédiate :<br />
                 Support 24/7 : +33 1 23 45 67 89<br />
-                Email : support@jokerou.com<br />
+                Email : support@grim.com<br />
                 Chat en direct via l'application
               </p>
             </section>
