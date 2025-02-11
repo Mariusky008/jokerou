@@ -31,6 +31,13 @@ export default function TalkieWalkie({ currentPlayer, players, onMessageStart, o
   const endSound = useRef<HTMLAudioElement | null>(null);
   const clickSound = useRef<HTMLAudioElement | null>(null);
 
+  // Initialiser l'AudioContext uniquement après une interaction utilisateur
+  const initAudioContext = () => {
+    if (!audioContext.current && typeof window !== 'undefined') {
+      audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+  };
+
   useEffect(() => {
     // Initialisation des effets sonores
     if (typeof window !== 'undefined') {
@@ -49,9 +56,6 @@ export default function TalkieWalkie({ currentPlayer, players, onMessageStart, o
       if (clickSound.current) clickSound.current.volume = 0.3;
     }
 
-    if (typeof window !== 'undefined') {
-      audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
     return () => {
       if (audioContext.current) {
         audioContext.current.close();
@@ -63,6 +67,7 @@ export default function TalkieWalkie({ currentPlayer, players, onMessageStart, o
   }, []);
 
   const generateBeep = (frequency: number, duration: number, type: 'up' | 'down' | 'click') => {
+    initAudioContext(); // Initialiser l'AudioContext lors de la première interaction
     if (!audioContext.current) return;
     
     const oscillator = audioContext.current.createOscillator();

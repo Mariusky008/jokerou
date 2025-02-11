@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import TalkieWalkie from '../components/TalkieWalkie';
 import Link from 'next/link';
+import EventEffects from '../components/EventEffects';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const MapComponent = dynamic(() => import('../components/Map'), {
@@ -60,6 +61,45 @@ interface Player {
   level: number;
 }
 
+// Types pour les événements spontanés
+interface SpontaneousEvent {
+  id: string;
+  type: 'power_boost' | 'speed_bonus' | 'instant_level' | 'special_ability';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  challenge: {
+    description: string;
+    timeLimit: number;
+    targetLocation: [number, number];
+    distance: number;
+  };
+  reward: {
+    type: string;
+    description: string;
+    duration?: number;
+  };
+  status: 'pending' | 'active' | 'completed' | 'failed';
+  startTime?: number;
+}
+
+interface EventNotification {
+  id: string;
+  eventId: string;
+  title: string;
+  message: string;
+  type: 'event_start' | 'event_success' | 'event_fail' | 'event_expire';
+  timestamp: number;
+}
+
+interface PossibleEvent {
+  id: string;
+  name: string;
+  description: string;
+  type: 'power_boost' | 'speed_bonus' | 'instant_level' | 'special_ability';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  icon: string;
+  isActive: boolean;
+}
+
 export default function Game() {
   const [isGrim] = useState(true);
   const [timeLeft, setTimeLeft] = useState(3600);
@@ -73,6 +113,52 @@ export default function Game() {
   const [globalMessage, setGlobalMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const chatRef = useRef<HTMLDivElement>(null);
+  const [activeEvents, setActiveEvents] = useState<SpontaneousEvent[]>([]);
+  const [eventNotifications, setEventNotifications] = useState<EventNotification[]>([]);
+  const [currentEffect, setCurrentEffect] = useState<{
+    type: 'reward' | 'zone' | 'countdown';
+    position?: [number, number];
+    duration?: number;
+    color?: string;
+  } | null>(null);
+  const [possibleEvents, setPossibleEvents] = useState<PossibleEvent[]>([
+    {
+      id: 'sprint',
+      name: 'Sprint mystique',
+      description: 'Courez à toute vitesse vers le point indiqué pour obtenir un bonus de vitesse',
+      type: 'speed_bonus',
+      rarity: 'common',
+      icon: '⚡',
+      isActive: false
+    },
+    {
+      id: 'power',
+      name: 'Zone de pouvoir',
+      description: 'Atteignez la zone mystique pour recharger instantanément vos pouvoirs',
+      type: 'power_boost',
+      rarity: 'rare',
+      icon: '✨',
+      isActive: false
+    },
+    {
+      id: 'level',
+      name: 'Ascension éclair',
+      description: 'Accomplissez un défi rapide pour gagner un niveau instantanément',
+      type: 'instant_level',
+      rarity: 'epic',
+      icon: '🌟',
+      isActive: false
+    },
+    {
+      id: 'ability',
+      name: 'Don ancestral',
+      description: 'Prouvez votre valeur pour débloquer une capacité légendaire temporaire',
+      type: 'special_ability',
+      rarity: 'legendary',
+      icon: '👑',
+      isActive: false
+    }
+  ]);
 
   const [powers, setPowers] = useState<Power[]>([
     {
@@ -132,14 +218,15 @@ export default function Game() {
     }
   ]);
 
-  const [currentPlayer] = useState<Player>({
+  const [currentPlayer, setCurrentPlayer] = useState<Player & { speed?: number }>({
     id: 'current',
     name: 'Vous',
     avatar: '👤',
     position: [48.8566, 2.3522],
     role: isGrim ? 'grim' : 'hunter',
     isReady: true,
-    level: 10
+    level: 10,
+    speed: 1
   });
 
   const [players] = useState<Player[]>([
@@ -171,6 +258,256 @@ export default function Game() {
       level: 10
     }
   ]);
+
+  const [showEventEffects, setShowEventEffects] = useState(false);
+  const [eventType, setEventType] = useState<'reward' | 'zone' | 'countdown' | 'challenge'>('reward');
+
+  // Fonction pour générer un événement spontané
+  const generateSpontaneousEvent = useCallback((playerPosition: [number, number]) => {
+    // Générer une position aléatoire dans un rayon de 100-300 mètres autour du joueur
+    const radius = Math.random() * 200 + 100; // Entre 100 et 300 mètres
+    const angle = Math.random() * Math.PI * 2; // Angle aléatoire en radians
+
+    // Convertir les coordonnées polaires en coordonnées cartésiennes
+    const offsetX = radius * Math.cos(angle);
+    const offsetY = radius * Math.sin(angle);
+
+    // Calculer la nouvelle position en pourcentage par rapport à la carte
+    const mapWidth = 1000; // Largeur de référence de la carte en mètres
+    const mapHeight = 1000; // Hauteur de référence de la carte en mètres
+
+    const targetX = 50 + (offsetX / mapWidth) * 100; // Centré sur 50%
+    const targetY = 50 + (offsetY / mapHeight) * 100; // Centré sur 50%
+
+    // Créer l'événement
+    const newEvent: SpontaneousEvent = {
+      id: Date.now().toString(),
+      type: 'speed_bonus',
+      rarity: 'common',
+      challenge: {
+        description: "Atteignez la zone marquée pour obtenir un bonus de vitesse !",
+        timeLimit: 60,
+        targetLocation: [targetX, targetY],
+        distance: radius
+      },
+      reward: {
+        type: 'speed_boost',
+        description: "Bonus de vitesse pendant 30 secondes",
+        duration: 30
+      },
+      status: 'pending'
+    };
+
+    // Afficher l'effet de défi
+    setEventType('challenge');
+    setShowEventEffects(true);
+
+    // Créer une notification
+    createEventNotification({
+      id: Date.now().toString(),
+      eventId: newEvent.id,
+      title: "🎯 Nouveau défi !",
+      message: newEvent.challenge.description,
+      type: 'event_start',
+      timestamp: Date.now()
+    });
+
+    // Après 2 secondes, afficher la zone
+    setTimeout(() => {
+      setEventType('zone');
+      setActiveEvents(prev => [...prev, newEvent]);
+    }, 2000);
+
+    return newEvent;
+  }, []);
+
+  // Fonction pour créer une notification
+  const createEventNotification = useCallback((
+    eventId: string,
+    type: EventNotification['type'],
+    title: string,
+    message: string
+  ) => {
+    const notification: EventNotification = {
+      id: `notif_${Date.now()}`,
+      eventId,
+      title,
+      message,
+      type,
+      timestamp: Date.now()
+    };
+
+    setEventNotifications(prev => [notification, ...prev]);
+  }, []);
+
+  // Fonction pour calculer la distance entre deux points
+  const calculateDistance = (pos1: [number, number], pos2: [number, number]): number => {
+    const R = 6371e3; // Rayon de la Terre en mètres
+    const φ1 = pos1[0] * Math.PI/180;
+    const φ2 = pos2[0] * Math.PI/180;
+    const Δφ = (pos2[0]-pos1[0]) * Math.PI/180;
+    const Δλ = (pos2[1]-pos1[1]) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
+  };
+
+  // Effet pour vérifier la position du joueur par rapport aux événements
+  useEffect(() => {
+    if (!currentPlayer.position) return;
+
+    setActiveEvents(prev => prev.map(event => {
+      // Ignorer les événements déjà complétés ou échoués
+      if (event.status === 'completed' || event.status === 'failed') return event;
+
+      // Calculer la distance entre le joueur et la cible
+      const distance = calculateDistance(
+        currentPlayer.position,
+        event.challenge.targetLocation
+      );
+
+      // Si le joueur est assez proche de la cible (10 mètres)
+      if (distance <= 10) {
+        // Si l'événement n'est pas encore actif, le démarrer
+        if (event.status === 'pending') {
+          createEventNotification(
+            event.id,
+            'event_start',
+            'Défi commencé !',
+            'Le compte à rebours est lancé. Restez dans la zone !'
+          );
+          return { ...event, status: 'active', startTime: Date.now() };
+        }
+        
+        // Si l'événement est actif et le temps n'est pas écoulé, le valider
+        if (event.status === 'active' && event.startTime) {
+          const timeElapsed = Date.now() - event.startTime;
+          if (timeElapsed <= event.challenge.timeLimit * 1000) {
+            createEventNotification(
+              event.id,
+              'event_success',
+              'Défi réussi !',
+              `Vous avez obtenu : ${event.reward.description}`
+            );
+
+            // Appliquer la récompense
+            applyEventReward(event);
+
+            return { ...event, status: 'completed' };
+          }
+        }
+      }
+      
+      return event;
+    }));
+  }, [currentPlayer.position, createEventNotification]);
+
+  // Fonction pour appliquer les récompenses
+  const applyEventReward = (event: SpontaneousEvent) => {
+    // Afficher l'effet de récompense
+    setCurrentEffect({
+      type: 'reward',
+      color: event.rarity === 'legendary' ? '#FFD700' :
+             event.rarity === 'epic' ? '#FF44CC' :
+             event.rarity === 'rare' ? '#4477FF' : '#8B5CF6'
+    });
+
+    switch (event.type) {
+      case 'power_boost':
+        setPowers(prev => prev.map(power => ({
+          ...power,
+          remainingUses: power.remainingUses + 1
+        })));
+        break;
+      case 'speed_bonus':
+        // Augmenter temporairement la vitesse du joueur
+        setCurrentPlayer(prev => ({
+          ...prev,
+          speed: prev.speed * 1.5
+        }));
+        setTimeout(() => {
+          setCurrentPlayer(prev => ({
+            ...prev,
+            speed: prev.speed / 1.5
+          }));
+        }, event.reward.duration * 1000);
+        break;
+      case 'instant_level':
+        setCurrentPlayer(prev => ({
+          ...prev,
+          level: prev.level + 1
+        }));
+        break;
+      case 'special_ability':
+        // Ajouter un nouveau pouvoir temporaire
+        const newPower: Power = {
+          id: `power_${Date.now()}`,
+          name: 'Pouvoir Mystique',
+          description: 'Un pouvoir rare et puissant',
+          icon: '✨',
+          cooldown: 60,
+          remainingUses: 1
+        };
+        setPowers(prev => [...prev, newPower]);
+        setTimeout(() => {
+          setPowers(prev => prev.filter(p => p.id !== newPower.id));
+        }, event.reward.duration * 1000);
+        break;
+    }
+  };
+
+  // Gestionnaire d'événements spontanés
+  useEffect(() => {
+    if (!currentPlayer.position) return;
+
+    const interval = setInterval(() => {
+      // Chance de générer un événement (10%)
+      if (Math.random() < 0.1) {
+        const event = generateSpontaneousEvent(currentPlayer.position);
+        setActiveEvents(prev => [...prev, event]);
+        
+        // Afficher l'effet de zone
+        setCurrentEffect({
+          type: 'zone',
+          position: event.challenge.targetLocation,
+          color: event.rarity === 'legendary' ? '#FFD700' :
+                 event.rarity === 'epic' ? '#FF44CC' :
+                 event.rarity === 'rare' ? '#4477FF' : '#8B5CF6',
+          duration: 5000
+        });
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [currentPlayer.position]);
+
+  // Vérification de la progression des événements
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      setActiveEvents(prev => prev.map(event => {
+        if (event.status !== 'active' || !event.startTime) return event;
+
+        const timeElapsed = Date.now() - event.startTime;
+        if (timeElapsed > event.challenge.timeLimit * 1000) {
+          createEventNotification(
+            event.id,
+            'event_expire',
+            'Défi échoué !',
+            'Temps écoulé. Une autre opportunité se présentera bientôt !'
+          );
+          return { ...event, status: 'failed' };
+        }
+
+        return event;
+      }));
+    }, 1000);
+
+    return () => clearInterval(checkInterval);
+  }, [createEventNotification]);
 
   useEffect(() => {
     // Timer pour le jeu et les cooldowns
@@ -248,6 +585,14 @@ export default function Game() {
 
     return () => clearInterval(zoneTimer);
   }, []);
+
+  // Mettre à jour l'état des événements possibles quand un événement démarre
+  useEffect(() => {
+    setPossibleEvents(prev => prev.map(event => ({
+      ...event,
+      isActive: activeEvents.some(active => active.type === event.type)
+    })));
+  }, [activeEvents]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -352,11 +697,172 @@ export default function Game() {
     console.log('Fin du message audio');
   };
 
+  const handleCreateEvent = () => {
+    if (!currentPlayer.position) return;
+
+    // Générer une position aléatoire dans un rayon de 100-300 mètres autour du joueur
+    const radius = Math.random() * 200 + 100; // Entre 100 et 300 mètres
+    const angle = Math.random() * Math.PI * 2; // Angle aléatoire en radians
+
+    // Convertir les coordonnées polaires en coordonnées cartésiennes
+    const offsetX = radius * Math.cos(angle);
+    const offsetY = radius * Math.sin(angle);
+
+    // Calculer la nouvelle position en pourcentage par rapport à la carte
+    const mapWidth = 1000; // Largeur de référence de la carte en mètres
+    const mapHeight = 1000; // Hauteur de référence de la carte en mètres
+
+    const targetX = 50 + (offsetX / mapWidth) * 100; // Centré sur 50%
+    const targetY = 50 + (offsetY / mapHeight) * 100; // Centré sur 50%
+
+    // Créer l'événement
+    const newEvent: SpontaneousEvent = {
+      id: Date.now().toString(),
+      type: 'speed_bonus',
+      rarity: 'common',
+      challenge: {
+        description: "Atteignez la zone marquée pour obtenir un bonus de vitesse !",
+        timeLimit: 60,
+        targetLocation: [targetX, targetY],
+        distance: radius
+      },
+      reward: {
+        type: 'speed_boost',
+        description: "Bonus de vitesse pendant 30 secondes",
+        duration: 30
+      },
+      status: 'pending'
+    };
+
+    // Afficher l'effet de défi
+    setEventType('challenge');
+    setShowEventEffects(true);
+
+    // Créer une notification
+    createEventNotification({
+      id: Date.now().toString(),
+      eventId: newEvent.id,
+      title: "🎯 Nouveau défi !",
+      message: newEvent.challenge.description,
+      type: 'event_start',
+      timestamp: Date.now()
+    });
+
+    // Après 2 secondes, afficher la zone
+    setTimeout(() => {
+      setEventType('zone');
+      setActiveEvents(prev => [...prev, newEvent]);
+    }, 2000);
+  };
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Head children={<>
-        <title>En Jeu - GRIM</title>
-      </>} />
+    <div className="relative min-h-screen bg-black">
+      <Head>
+        <title>Partie en cours - GRIM</title>
+      </Head>
+
+      {/* Notifications d'événements */}
+      <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+        {eventNotifications.slice(0, 3).map(notification => (
+          <motion.div
+            key={notification.id}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            className={`p-4 rounded-lg shadow-lg ${
+              notification.type === 'event_start' ? 'bg-purple-600'
+              : notification.type === 'event_success' ? 'bg-green-600'
+              : notification.type === 'event_fail' ? 'bg-red-600'
+              : 'bg-yellow-600'
+            }`}
+          >
+            <h3 className="font-bold text-white">{notification.title}</h3>
+            <p className="text-white/90 text-sm">{notification.message}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Événements actifs */}
+      <div className="fixed bottom-4 left-4 z-50 space-y-2">
+        {activeEvents
+          .filter(event => event.status === 'active')
+          .map(event => (
+            <motion.div
+              key={event.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`p-4 rounded-lg shadow-lg ${
+                event.rarity === 'legendary' ? 'bg-gradient-to-r from-yellow-600 to-orange-600'
+                : event.rarity === 'epic' ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                : event.rarity === 'rare' ? 'bg-gradient-to-r from-blue-600 to-cyan-600'
+                : 'bg-gradient-to-r from-green-600 to-teal-600'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">
+                  {event.type === 'power_boost' ? '⚡'
+                    : event.type === 'speed_bonus' ? '🏃'
+                    : event.type === 'instant_level' ? '⭐'
+                    : '✨'}
+                </span>
+                <span className="font-bold text-white">
+                  {event.rarity.toUpperCase()}
+                </span>
+              </div>
+              <p className="text-white/90 text-sm mb-2">{event.challenge.description}</p>
+              {event.startTime && (
+                <div className="w-full h-1 bg-black/20 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-white"
+                    initial={{ width: "100%" }}
+                    animate={{ width: "0%" }}
+                    transition={{
+                      duration: event.challenge.timeLimit,
+                      ease: "linear"
+                    }}
+                  />
+                </div>
+              )}
+            </motion.div>
+          ))}
+      </div>
+
+      {/* Section des événements possibles */}
+      <div className="fixed bottom-24 left-4 space-y-2 z-[9998]">
+        <AnimatePresence>
+          {possibleEvents.map(event => (
+            <motion.div
+              key={event.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className={`p-3 rounded-lg backdrop-blur-sm transition-all duration-300 cursor-help
+                ${event.isActive 
+                  ? `bg-gradient-to-r 
+                      ${event.rarity === 'legendary' ? 'from-yellow-600/80 to-yellow-500/80 shadow-yellow-500/50' :
+                        event.rarity === 'epic' ? 'from-purple-600/80 to-pink-500/80 shadow-purple-500/50' :
+                        event.rarity === 'rare' ? 'from-blue-600/80 to-cyan-500/80 shadow-blue-500/50' :
+                        'from-green-600/80 to-emerald-500/80 shadow-green-500/50'}
+                      shadow-lg animate-pulse`
+                  : 'bg-gray-800/50'
+                }`}
+              title={event.description}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{event.icon}</span>
+                <div>
+                  <div className={`font-bold ${event.isActive ? 'text-white' : 'text-gray-400'}`}>
+                    {event.name}
+                  </div>
+                  <div className={`text-sm ${event.isActive ? 'text-gray-200' : 'text-gray-500'}`}>
+                    {event.rarity.charAt(0).toUpperCase() + event.rarity.slice(1)}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       <div className="container mx-auto px-4 py-8">
         {/* En-tête du jeu */}
@@ -606,6 +1112,27 @@ export default function Game() {
         onMessageStart={handleMessageStart}
         onMessageEnd={handleMessageEnd}
       />
+
+      {/* Bouton de test pour les événements */}
+      <button
+        onClick={handleCreateEvent}
+        className="fixed top-4 left-4 z-50 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+      >
+        Créer un événement
+      </button>
+
+      {/* Effets visuels pour les événements */}
+      <AnimatePresence>
+        {showEventEffects && (
+          <EventEffects
+            eventType={eventType}
+            position={currentEffect?.position}
+            color={currentEffect?.color}
+            duration={currentEffect?.duration || 3000}
+            onComplete={() => setShowEventEffects(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <style jsx global>{`
         .shadow-neon {

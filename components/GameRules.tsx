@@ -16,7 +16,8 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
     { id: 'powers', name: 'Pouvoirs et bonus', icon: '⚡', gradient: 'from-yellow-400 to-orange-600' },
     { id: 'points', name: 'Points et niveaux', icon: '🏆', gradient: 'from-green-400 to-emerald-600' },
     { id: 'zones', name: 'Zones spéciales', icon: '🎯', gradient: 'from-purple-400 to-pink-600' },
-    { id: 'meetup', name: 'Point de rencontre', icon: '🤝', gradient: 'from-pink-400 to-red-600' }
+    { id: 'effects', name: 'Effets spéciaux', icon: '✨', gradient: 'from-pink-400 to-red-600' },
+    { id: 'meetup', name: 'Point de rencontre', icon: '🤝', gradient: 'from-red-400 to-orange-600' }
   ];
 
   const rules = {
@@ -200,6 +201,44 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
         ]
       }
     ],
+    effects: [
+      {
+        title: "Effets visuels",
+        content: [
+          "Particules colorées lors de l'obtention d'une récompense",
+          "Pulsations lumineuses pour indiquer les zones d'événements",
+          "Compte à rebours visuel pour le temps restant",
+          "Animations spéciales pour les pouvoirs activés"
+        ]
+      },
+      {
+        title: "Effets sonores",
+        content: [
+          "Sons de notification pour les événements spontanés",
+          "Effets sonores pour les récompenses obtenues",
+          "Alertes sonores pour les zones spéciales",
+          "Sons ambiants selon la proximité des joueurs"
+        ]
+      },
+      {
+        title: "Retours visuels",
+        content: [
+          "Indicateurs de direction pour les événements proches",
+          "Marqueurs pulsants sur la carte pour les zones actives",
+          "Effets de transition lors des changements de zone",
+          "Animations de succès pour les objectifs accomplis"
+        ]
+      },
+      {
+        title: "Immersion",
+        content: [
+          "Vibrations du téléphone pour les événements importants",
+          "Intensité sonore variable selon la distance",
+          "Effets météorologiques sur la carte",
+          "Thèmes visuels adaptés à l'heure de la journée"
+        ]
+      }
+    ],
     meetup: [
       {
         title: "Point de rencontre après-partie",
@@ -353,7 +392,8 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
                            activeTab === 'roles' ? '🎭' :
                            activeTab === 'powers' ? '⚡' :
                            activeTab === 'points' ? '🏆' :
-                           activeTab === 'zones' ? '🎯' : '🤝'}
+                           activeTab === 'zones' ? '🎯' :
+                           activeTab === 'effects' ? '✨' : '🤝'}
                         </motion.span>
                         {section.title}
                       </motion.h3>
