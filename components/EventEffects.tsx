@@ -13,6 +13,7 @@ interface EventEffectsProps {
   duration?: number;
   color?: string;
   onComplete?: () => void;
+  mapRef?: React.RefObject<any>;
 }
 
 const Particle = ({ color, x, y }: ParticleProps) => (
@@ -61,13 +62,21 @@ const ChallengeNotification = ({ onClose }: { onClose: () => void }) => (
   </div>
 );
 
-export default function EventEffects({ eventType, position, duration = 3000, color = "#8B5CF6", onComplete }: EventEffectsProps) {
+export default function EventEffects({ 
+  eventType, 
+  position, 
+  duration = 3000, 
+  color = "#8B5CF6", 
+  onComplete,
+  mapRef 
+}: EventEffectsProps) {
   const [particles, setParticles] = useState<ParticleProps[]>([]);
   const [isVisible, setIsVisible] = useState(true);
   const [showChallenge, setShowChallenge] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration / 1000);
   const audioContext = useRef<AudioContext | null>(null);
   const isFirstRender = useRef(true);
+  const effectRef = useRef<HTMLDivElement>(null);
 
   // Initialiser l'AudioContext lors d'une interaction utilisateur
   const initAudio = () => {
@@ -82,33 +91,42 @@ export default function EventEffects({ eventType, position, duration = 3000, col
     }
   };
 
-  const playSound = async (soundUrl: string, volume: number = 0.3) => {
-    try {
-      if (!initAudio() || !audioContext.current) return;
+  const playSound = (type: 'reward' | 'challenge') => {
+    if (!initAudio() || !audioContext.current) return;
 
-      const response = await fetch(soundUrl);
-      if (!response.ok) throw new Error('Erreur lors du chargement du son');
+    const oscillator = audioContext.current.createOscillator();
+    const gainNode = audioContext.current.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.current.destination);
+
+    const now = audioContext.current.currentTime;
+
+    if (type === 'reward') {
+      // Son de récompense (arpège ascendant)
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(440, now);
+      oscillator.frequency.exponentialRampToValueAtTime(880, now + 0.2);
       
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await audioContext.current.decodeAudioData(arrayBuffer);
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.3, now + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
       
-      const source = audioContext.current.createBufferSource();
-      const gainNode = audioContext.current.createGain();
+      oscillator.start(now);
+      oscillator.stop(now + 0.3);
+    } else if (type === 'challenge') {
+      // Son de défi (double bip grave)
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(220, now);
       
-      source.buffer = audioBuffer;
-      gainNode.gain.value = volume;
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.2, now + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+      gainNode.gain.linearRampToValueAtTime(0.2, now + 0.3);
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
       
-      source.connect(gainNode);
-      gainNode.connect(audioContext.current.destination);
-      
-      source.start();
-      
-      source.onended = () => {
-        source.disconnect();
-        gainNode.disconnect();
-      };
-    } catch (error) {
-      console.error('Erreur lors de la lecture du son:', error);
+      oscillator.start(now);
+      oscillator.stop(now + 0.5);
     }
   };
 
@@ -134,7 +152,7 @@ export default function EventEffects({ eventType, position, duration = 3000, col
         y: window.innerHeight / 2
       }));
       setParticles(newParticles);
-      playSound('/sounds/reward.mp3', 0.3);
+      playSound('reward');
       
       const timer = setTimeout(() => {
         setIsVisible(false);
@@ -145,7 +163,7 @@ export default function EventEffects({ eventType, position, duration = 3000, col
     
     if (eventType === 'challenge' && isFirstRender.current) {
       setShowChallenge(true);
-      playSound('/sounds/challenge.mp3', 0.4);
+      playSound('challenge');
       isFirstRender.current = false;
     }
 
@@ -174,32 +192,63 @@ export default function EventEffects({ eventType, position, duration = 3000, col
     }
   }, [eventType, timeLeft]);
 
+  useEffect(() => {
+    if (eventType === 'zone' && position && mapRef?.current && effectRef.current) {
+      const updatePosition = () => {
+        const map = mapRef.current;
+        if (!map || !effectRef.current) return;
+
+        // Convert map coordinates to pixel coordinates
+        const point = map.latLngToContainerPoint([position[0], position[1]]);
+        
+        effectRef.current.style.left = `${point.x}px`;
+        effectRef.current.style.top = `${point.y}px`;
+      };
+
+      // Initial position
+      updatePosition();
+
+      // Update position on map events
+      const map = mapRef.current;
+      map.on('zoom', updatePosition);
+      map.on('move', updatePosition);
+      map.on('moveend', updatePosition);
+
+      return () => {
+        map.off('zoom', updatePosition);
+        map.off('move', updatePosition);
+        map.off('moveend', updatePosition);
+      };
+    }
+  }, [eventType, position, mapRef]);
+
   return (
     <>
-      {showChallenge && <ChallengeNotification onClose={() => {
-        setShowChallenge(false);
-        onComplete?.();
-      }} />}
+      {showChallenge && (
+        <ChallengeNotification 
+          onClose={() => {
+            setShowChallenge(false);
+            // Don't call onComplete here to maintain the zone effect
+          }} 
+        />
+      )}
 
       <AnimatePresence>
         {isVisible && (
           <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
-            {/* Particules pour les récompenses */}
             {eventType === 'reward' && particles.map((particle, index) => (
               <Particle key={index} {...particle} />
             ))}
 
-            {/* Pulsation pour les zones */}
             {eventType === 'zone' && position && (
               <div 
+                ref={effectRef}
                 className="absolute"
                 style={{
-                  left: `${position[0]}%`,
-                  top: `${position[1]}%`,
                   transform: 'translate(-50%, -50%)',
                   width: '200px',
                   height: '200px',
-                  zIndex: 10000
+                  zIndex: 1000
                 }}
               >
                 <motion.div
@@ -223,7 +272,6 @@ export default function EventEffects({ eventType, position, duration = 3000, col
               </div>
             )}
 
-            {/* Compte à rebours */}
             {eventType === 'countdown' && (
               <motion.div
                 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"

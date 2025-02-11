@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, forwardRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -159,9 +159,9 @@ const specialZoneStyle = `
 `;
 
 // Ajouter les styles au head du document
-if (typeof document !== 'undefined') {
+if (typeof window !== 'undefined') {
   const style = document.createElement('style');
-  style.textContent = markerStyle;
+  style.textContent = markerStyle + specialZoneStyle;
   document.head.appendChild(style);
 }
 
@@ -261,7 +261,8 @@ function ZoomControl() {
   );
 }
 
-export default function Map({ showGrim, onPlayerSelect, specialZones: initialSpecialZones = [] }: MapProps) {
+const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones: initialSpecialZones = [] }, ref) => {
+  const [isClient, setIsClient] = useState(false);
   const [currentPosition, setCurrentPosition] = useState<[number, number]>([48.8566, 2.3522]);
   const [selectedPlayerForChat, setSelectedPlayerForChat] = useState<PlayerLocation | null>(null);
   const [players, setPlayers] = useState<PlayerLocation[]>([
@@ -464,20 +465,23 @@ export default function Map({ showGrim, onPlayerSelect, specialZones: initialSpe
   }, [currentPosition, initialSpecialZones]);
 
   useEffect(() => {
-    const styleElement = document.createElement('style');
-    styleElement.textContent = markerStyle + specialZoneStyle;
-    document.head.appendChild(styleElement);
-
-    return () => {
-      document.head.removeChild(styleElement);
-    };
+    setIsClient(true);
   }, []);
+
+  if (!isClient) {
+    return (
+      <div className="w-full h-full bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
+        <div className="text-white text-xl">Chargement de la carte...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[600px] rounded-2xl overflow-hidden relative">
       <MapContainer
+        ref={ref}
         center={currentPosition}
-        zoom={16}
+        zoom={18}
         className="h-full w-full"
         style={{ background: '#1a1a1a' }}
         zoomControl={false} // Désactiver les contrôles de zoom par défaut
@@ -878,4 +882,8 @@ export default function Map({ showGrim, onPlayerSelect, specialZones: initialSpe
       `}</style>
     </div>
   );
-} 
+});
+
+Map.displayName = 'Map';
+
+export default Map; 

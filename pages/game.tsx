@@ -7,14 +7,17 @@ import Link from 'next/link';
 import EventEffects from '../components/EventEffects';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
-const MapComponent = dynamic(() => import('../components/Map'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[600px] bg-gray-900 rounded-2xl flex items-center justify-center">
-      <div className="text-2xl text-gray-400">Chargement de la carte...</div>
-    </div>
-  ),
-});
+const Map = dynamic(
+  () => import('../components/Map'),
+  { 
+    loading: () => (
+      <div className="w-full h-full bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
+        <div className="text-white text-xl">Chargement de la carte...</div>
+      </div>
+    ),
+    ssr: false
+  }
+);
 
 interface Power {
   id: string;
@@ -261,6 +264,7 @@ export default function Game() {
 
   const [showEventEffects, setShowEventEffects] = useState(false);
   const [eventType, setEventType] = useState<'reward' | 'zone' | 'countdown' | 'challenge'>('reward');
+  const mapRef = useRef(null);
 
   // Fonction pour générer un événement spontané
   const generateSpontaneousEvent = useCallback((playerPosition: [number, number]) => {
@@ -902,8 +906,9 @@ export default function Game() {
               transition={{ delay: 0.2 }}
               className="mb-8"
             >
-              <MapComponent 
-                showGrim={showGrim} 
+              <Map
+                ref={mapRef}
+                showGrim={showGrim}
                 onPlayerSelect={(player) => {
                   setShowChat(true);
                 }}
@@ -1123,8 +1128,9 @@ export default function Game() {
             eventType={eventType}
             position={currentEffect?.position}
             color={currentEffect?.color}
-            duration={currentEffect?.duration || 3000}
+            duration={currentEffect?.duration}
             onComplete={() => setShowEventEffects(false)}
+            mapRef={mapRef}
           />
         )}
       </AnimatePresence>

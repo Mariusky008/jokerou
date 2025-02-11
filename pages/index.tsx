@@ -172,17 +172,11 @@ export default function Home() {
           <Image
             src="/images/portrait.png"
             alt="Grim Background"
-            layout="fill"
-            objectFit="cover"
-            quality={100}
+            fill
             priority
-            className="opacity-85 brightness-125"
+            quality={100}
+            className="opacity-85 brightness-125 object-cover object-center"
             sizes="100vw"
-            style={{
-              objectPosition: 'center',
-              width: '100%',
-              height: '100%'
-            }}
           />
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-black/95 to-pink-900/90">
             {/* Motif de grille représentant les rues */}
