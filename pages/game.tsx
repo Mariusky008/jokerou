@@ -8,10 +8,10 @@ import EventEffects from '../components/EventEffects';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const Map = dynamic(
-  () => import('../components/Map'),
+  () => import('../components/Map').then((mod) => mod.default),
   { 
     loading: () => (
-      <div className="w-full h-full bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
+      <div className="h-[600px] bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
         <div className="text-white text-xl">Chargement de la carte...</div>
       </div>
     ),

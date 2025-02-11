@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback, forwardRef } from 'react';
+import { useEffect, useState, useCallback, forwardRef, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import type { Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PlayerMessages from './PlayerMessages';
+import dynamic from 'next/dynamic';
 
 // Styles CSS pour les marqueurs Leaflet
 const markerStyle = `
@@ -158,11 +159,37 @@ const specialZoneStyle = `
   }
 `;
 
-// Ajouter les styles au head du document
+// Import dynamique des composants Leaflet
+const MapContainerDynamic = dynamic(
+  () => import('react-leaflet').then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+
+const TileLayerDynamic = dynamic(
+  () => import('react-leaflet').then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+
+const MarkerDynamic = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Marker),
+  { ssr: false }
+);
+
+const PopupDynamic = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Popup),
+  { ssr: false }
+);
+
+const CircleDynamic = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Circle),
+  { ssr: false }
+);
+
+// Import dynamique de Leaflet
+let leafletInstance: typeof import('leaflet');
 if (typeof window !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = markerStyle + specialZoneStyle;
-  document.head.appendChild(style);
+  leafletInstance = require('leaflet');
+  require('leaflet/dist/leaflet.css');
 }
 
 interface MapProps {
@@ -261,9 +288,9 @@ function ZoomControl() {
   );
 }
 
-const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones: initialSpecialZones = [] }, ref) => {
+const Map = forwardRef<LeafletMap, MapProps>(({ showGrim, onPlayerSelect, specialZones: initialSpecialZones = [] }, ref) => {
   const [isClient, setIsClient] = useState(false);
-  const [currentPosition, setCurrentPosition] = useState<[number, number]>([48.8566, 2.3522]);
+  const [playerPosition, setPlayerPosition] = useState<[number, number]>([48.8566, 2.3522]);
   const [selectedPlayerForChat, setSelectedPlayerForChat] = useState<PlayerLocation | null>(null);
   const [players, setPlayers] = useState<PlayerLocation[]>([
     {
@@ -366,9 +393,17 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
   ]);
 
   const [specialZones, setSpecialZones] = useState<SpecialZone[]>(initialSpecialZones);
+  const mapRef = useRef<LeafletMap>(null);
+
+  useEffect(() => {
+    // Si une ref externe est fournie, on lui passe l'instance de la carte
+    if (ref && mapRef.current) {
+      (ref as React.MutableRefObject<LeafletMap>).current = mapRef.current;
+    }
+  }, [ref, mapRef.current]);
 
   const handlePositionChange = useCallback((newPosition: [number, number]) => {
-    setCurrentPosition(newPosition);
+    setPlayerPosition(newPosition);
     
     // Mettre à jour les positions des autres joueurs autour de la position actuelle
     setPlayers(prev => prev.map(player => ({
@@ -401,7 +436,7 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
       </div>
     `;
 
-    return L.divIcon({
+    return leafletInstance.divIcon({
       html: markerHtml,
       className: 'custom-div-icon',
       iconSize: [40, 40],
@@ -419,7 +454,7 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
       </div>
     `;
 
-    return L.divIcon({
+    return leafletInstance.divIcon({
       html: markerHtml,
       className: 'power-spot-icon',
       iconSize: [40, 40],
@@ -436,7 +471,7 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
       </div>
     `;
 
-    return L.divIcon({
+    return leafletInstance.divIcon({
       html: markerHtml,
       className: 'special-zone-icon',
       iconSize: [40, 40],
@@ -447,7 +482,7 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
 
   // Zone de jeu
   const gameZone = {
-    center: currentPosition,
+    center: playerPosition,
     radius: 1000 // 1km en mètres
   };
 
@@ -457,20 +492,32 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
       setSpecialZones(initialSpecialZones.map(zone => ({
         ...zone,
         position: zone.position || [
-          currentPosition[0] + (Math.random() - 0.5) * 0.005,
-          currentPosition[1] + (Math.random() - 0.5) * 0.005
+          playerPosition[0] + (Math.random() - 0.5) * 0.005,
+          playerPosition[1] + (Math.random() - 0.5) * 0.005
         ]
       })));
     }
-  }, [currentPosition, initialSpecialZones]);
+  }, [playerPosition, initialSpecialZones]);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  useEffect(() => {
+    if (isClient) {
+      const style = document.createElement('style');
+      style.textContent = markerStyle + specialZoneStyle;
+      document.head.appendChild(style);
+
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
+  }, [isClient]);
+
   if (!isClient) {
     return (
-      <div className="w-full h-full bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
+      <div className="h-[600px] bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
         <div className="text-white text-xl">Chargement de la carte...</div>
       </div>
     );
@@ -478,24 +525,28 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
 
   return (
     <div className="h-[600px] rounded-2xl overflow-hidden relative">
-      <MapContainer
-        ref={ref}
-        center={currentPosition}
-        zoom={18}
-        className="h-full w-full"
-        style={{ background: '#1a1a1a' }}
-        zoomControl={false} // Désactiver les contrôles de zoom par défaut
+      <MapContainerDynamic
+        center={playerPosition}
+        zoom={13}
+        style={{ height: '600px', width: '100%', borderRadius: '1rem' }}
+        ref={mapRef}
+        whenCreated={(map: LeafletMap) => {
+          mapRef.current = map;
+          if (ref) {
+            (ref as React.MutableRefObject<LeafletMap>).current = map;
+          }
+        }}
       >
         <LocationUpdater onPositionChange={handlePositionChange} />
         
-        <TileLayer
+        <TileLayerDynamic
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           className="map-tiles"
         />
         
         {/* Zone de jeu */}
-        <Circle
+        <CircleDynamic
           center={gameZone.center}
           radius={gameZone.radius}
           pathOptions={{
@@ -507,13 +558,13 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
         />
 
         {/* Marqueur de votre position */}
-        <Marker
-          position={currentPosition}
+        <MarkerDynamic
+          position={playerPosition}
           icon={createCustomIcon({
             id: 'you',
             name: 'Vous',
             avatar: '📍',
-            position: currentPosition,
+            position: playerPosition,
             role: 'hunter',
             isReady: true,
             level: 1,
@@ -521,20 +572,20 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
             winRate: 0
           })}
         >
-          <Popup>
+          <PopupDynamic>
             <div className="text-center bg-gray-900 p-3 rounded-lg">
               <div className="text-2xl mb-2">📍</div>
               <div className="font-bold text-white">Votre position</div>
             </div>
-          </Popup>
-        </Marker>
+          </PopupDynamic>
+        </MarkerDynamic>
 
         {/* Marqueurs des autres joueurs */}
         {players.map((player) => {
           if (player.role === 'grim' && !showGrim) return null;
 
           return (
-            <Marker
+            <MarkerDynamic
               key={player.id}
               position={player.position}
               icon={createCustomIcon(player)}
@@ -556,7 +607,7 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
                 }
               }}
             >
-              <Popup>
+              <PopupDynamic>
                 <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[250px]">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
@@ -610,19 +661,19 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
                     </button>
                   </div>
                 </div>
-              </Popup>
-            </Marker>
+              </PopupDynamic>
+            </MarkerDynamic>
           );
         })}
 
         {/* Points d'intérêt */}
         {powerSpots.map((spot) => (
-          <Marker
+          <MarkerDynamic
             key={spot.id}
             position={spot.position}
             icon={createPowerSpotIcon(spot)}
           >
-            <Popup>
+            <PopupDynamic>
               <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
                 <div className="text-2xl mb-2">{spot.icon}</div>
                 <div className="font-bold text-white mb-1">{spot.name}</div>
@@ -652,14 +703,14 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
                   </button>
                 )}
               </div>
-            </Popup>
-          </Marker>
+            </PopupDynamic>
+          </MarkerDynamic>
         ))}
 
         {/* Zones spéciales */}
         {specialZones.map((zone) => (
           zone.isActive && zone.position && (
-            <Marker
+            <MarkerDynamic
               key={zone.id}
               position={zone.position}
               icon={createSpecialZoneIcon(zone)}
@@ -674,7 +725,7 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
                 }
               }}
             >
-              <Popup>
+              <PopupDynamic>
                 <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
                   <div className="text-2xl mb-2">{zone.icon}</div>
                   <div className="font-bold text-white mb-1">{zone.name}</div>
@@ -683,14 +734,14 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
                     Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
                   </div>
                 </div>
-              </Popup>
-            </Marker>
+              </PopupDynamic>
+            </MarkerDynamic>
           )
         ))}
 
         {/* Remplacer les boutons de zoom existants par le composant ZoomControl */}
         <ZoomControl />
-      </MapContainer>
+      </MapContainerDynamic>
 
       {/* Fenêtre de messagerie privée */}
       {selectedPlayerForChat && (
@@ -886,4 +937,7 @@ const Map = forwardRef<any, MapProps>(({ showGrim, onPlayerSelect, specialZones:
 
 Map.displayName = 'Map';
 
-export default Map; 
+// Export the Map component with dynamic import and SSR disabled
+export default dynamic(() => Promise.resolve(Map), {
+  ssr: false
+}); 

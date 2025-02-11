@@ -1,5 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import type { Map as LeafletMap } from 'leaflet';
+
+// Dynamic import of Leaflet
+let leafletInstance: typeof import('leaflet');
+if (typeof window !== 'undefined') {
+  leafletInstance = require('leaflet');
+}
 
 interface ParticleProps {
   color: string;
@@ -77,6 +85,7 @@ export default function EventEffects({
   const audioContext = useRef<AudioContext | null>(null);
   const isFirstRender = useRef(true);
   const effectRef = useRef<HTMLDivElement>(null);
+  const [isClient, setIsClient] = useState(false);
 
   // Initialiser l'AudioContext lors d'une interaction utilisateur
   const initAudio = () => {
@@ -145,6 +154,13 @@ export default function EventEffects({
   }, []);
 
   useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== 'undefined') {
+      leafletInstance = require('leaflet');
+    }
+  }, []);
+
+  useEffect(() => {
     if (eventType === 'reward') {
       const newParticles = Array.from({ length: 20 }, () => ({
         color,
@@ -193,34 +209,45 @@ export default function EventEffects({
   }, [eventType, timeLeft]);
 
   useEffect(() => {
-    if (eventType === 'zone' && position && mapRef?.current && effectRef.current) {
+    if (eventType === 'zone' && position && mapRef?.current && isClient && leafletInstance) {
       const updatePosition = () => {
-        const map = mapRef.current;
-        if (!map || !effectRef.current) return;
+        const mapInstance = mapRef.current as LeafletMap;
+        if (!mapInstance || !effectRef.current) return;
 
-        // Convert map coordinates to pixel coordinates
-        const point = map.latLngToContainerPoint([position[0], position[1]]);
-        
-        effectRef.current.style.left = `${point.x}px`;
-        effectRef.current.style.top = `${point.y}px`;
+        try {
+          // Convertir les coordonnées de la carte en pixels
+          const latLng = leafletInstance.latLng(position[0], position[1]);
+          const point = mapInstance.latLngToContainerPoint(latLng);
+
+          if (point) {
+            effectRef.current.style.left = `${point.x}px`;
+            effectRef.current.style.top = `${point.y}px`;
+          }
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour de la position:', error);
+        }
       };
 
       // Initial position
       updatePosition();
 
       // Update position on map events
-      const map = mapRef.current;
-      map.on('zoom', updatePosition);
-      map.on('move', updatePosition);
-      map.on('moveend', updatePosition);
+      const map = mapRef.current as LeafletMap;
+      if (map && typeof map.on === 'function') {
+        map.on('zoom', updatePosition);
+        map.on('move', updatePosition);
+        map.on('moveend', updatePosition);
 
-      return () => {
-        map.off('zoom', updatePosition);
-        map.off('move', updatePosition);
-        map.off('moveend', updatePosition);
-      };
+        return () => {
+          if (map && typeof map.off === 'function') {
+            map.off('zoom', updatePosition);
+            map.off('move', updatePosition);
+            map.off('moveend', updatePosition);
+          }
+        };
+      }
     }
-  }, [eventType, position, mapRef]);
+  }, [eventType, position, mapRef, isClient]);
 
   return (
     <>
