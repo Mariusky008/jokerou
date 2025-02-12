@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -26,13 +26,57 @@ interface Notification {
   type: 'success' | 'error';
 }
 
+// Fonction utilitaire pour jouer les sons
+const playSound = (soundName: string) => {
+  const audio = new Audio(`/sounds/${soundName}.mp3`);
+  audio.volume = 0.7; // Augmenté à 70%
+  return audio.play().catch(error => {
+    console.error(`Erreur lors de la lecture du son ${soundName}:`, error);
+    // Tentative de relecture après un court délai
+    setTimeout(() => {
+      audio.play().catch(e => console.error('Deuxième tentative échouée:', e));
+    }, 100);
+  });
+};
+
 export default function Hunts() {
   const router = useRouter();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
   const [showRules, setShowRules] = useState(false);
+  const [showImmersiveStart, setShowImmersiveStart] = useState(false);
+  const [startingHunt, setStartingHunt] = useState<Hunt | null>(null);
+  const [countdown, setCountdown] = useState(5);
   const [hunts, setHunts] = useState<Hunt[]>([
+    {
+      id: '5',
+      date: new Date(Date.now() + 600000), // Dans 10 minutes (600000 ms)
+      city: 'Bordeaux',
+      participants: 8,
+      maxParticipants: 12,
+      status: 'open',
+      creator: {
+        name: 'Thomas',
+        avatar: '👤'
+      },
+      timeToStart: 600,
+      inviteLink: ''
+    },
+    {
+      id: '0',
+      date: new Date(Date.now() + 915000), // Dans 15 minutes et 15 secondes (915000 ms)
+      city: 'Bordeaux',
+      participants: 10,
+      maxParticipants: 12,
+      status: 'open',
+      creator: {
+        name: 'Sophie',
+        avatar: '🎭'
+      },
+      timeToStart: 915,
+      inviteLink: ''
+    },
     {
       id: '1',
       date: new Date(Date.now() + 600000), // Dans 10 minutes
@@ -106,11 +150,38 @@ export default function Hunts() {
     return () => clearInterval(interval);
   }, [isMounted]);
 
+  // Effet pour jouer les sons lors du démarrage immersif
+  useEffect(() => {
+    if (showImmersiveStart) {
+      // Son d'ambiance au démarrage
+      playSound('radio-start');
+
+      // Son pour chaque seconde du compte à rebours
+      const countdownSound = () => {
+        if (countdown > 0) {
+          playSound('radio-click');
+        }
+      };
+
+      const soundInterval = setInterval(countdownSound, 1000);
+
+      // Son final lors de la redirection
+      const finalSound = setTimeout(() => {
+        playSound('radio-end');
+      }, countdown * 1000);
+
+      return () => {
+        clearInterval(soundInterval);
+        clearTimeout(finalSound);
+      };
+    }
+  }, [showImmersiveStart, countdown]);
+
   const handleCreateHunt = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Vérifier si l'utilisateur est authentifié
-    const isAuthenticated = false; // À remplacer par votre logique d'authentification réelle
+    // À remplacer par la vérification d'authentification réelle
+    const isAuthenticated = true; // Temporairement mis à true pour les tests
     
     if (!isAuthenticated) {
       setNotification({
@@ -162,8 +233,8 @@ export default function Hunts() {
   };
 
   const handleJoinHunt = (huntId: string) => {
-    // Vérifier si l'utilisateur est authentifié
-    const isAuthenticated = false; // À remplacer par votre logique d'authentification réelle
+    // À remplacer par la vérification d'authentification réelle
+    const isAuthenticated = true; // Temporairement mis à true pour les tests
     
     if (!isAuthenticated) {
       setNotification({
@@ -176,32 +247,14 @@ export default function Hunts() {
       return;
     }
 
+    const selectedHunt = hunts.find(h => h.id === huntId);
+    if (!selectedHunt) return;
+
+    const timeToStart = Math.floor((selectedHunt.date.getTime() - Date.now()) / 1000);
+    const isStartingSoon = timeToStart <= 900; // 15 minutes = 900 secondes
+
     setHunts(prev => prev.map(hunt => {
       if (hunt.id === huntId && hunt.participants < hunt.maxParticipants) {
-        const timeToStart = Math.floor((hunt.date.getTime() - Date.now()) / 1000);
-        const hours = Math.floor(timeToStart / 3600);
-        const minutes = Math.floor((timeToStart % 3600) / 60);
-        
-        let timeMessage = '';
-        if (hours > 0) {
-          timeMessage = `Début dans ${hours}h ${minutes}m`;
-        } else {
-          timeMessage = `Début dans ${minutes}m`;
-        }
-
-        setNotification({
-          message: `Vous êtes inscrit à la chasse à ${hunt.city} ! ${timeMessage}`,
-          type: 'success'
-        });
-        setTimeout(() => setNotification(null), 5000);
-
-        // Si la partie commence dans moins de 15 minutes, rediriger vers la page des rôles
-        if (timeToStart <= 900) {
-          setTimeout(() => {
-            router.push('/roles');
-          }, 1500);
-        }
-
         return {
           ...hunt,
           participants: hunt.participants + 1,
@@ -211,6 +264,36 @@ export default function Hunts() {
       }
       return hunt;
     }));
+
+    // Ne déclencher la séquence immersive que si la partie commence dans moins de 15 minutes
+    if (isStartingSoon) {
+      playSound('radio-start');
+      setStartingHunt(selectedHunt);
+      setShowImmersiveStart(true);
+      setCountdown(10);
+
+      const countdownInterval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            playSound('radio-end');
+            setTimeout(() => {
+              router.push('/roles');
+            }, 1000);
+            return 0;
+          }
+          playSound('radio-click');
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      // Afficher une notification de confirmation d'inscription
+      setNotification({
+        message: `Vous êtes inscrit à la chasse de ${selectedHunt.city} !`,
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -227,13 +310,13 @@ export default function Hunts() {
       return 'bg-gray-700 text-gray-400 cursor-not-allowed';
     }
     
-    if (hunt.isWaiting) {
-      return 'bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white shadow-lg hover:shadow-yellow-500/50';
-    }
-    
     const timeToStart = Math.floor((hunt.date.getTime() - Date.now()) / 1000);
-    if (timeToStart <= 900) { // 15 minutes = 900 secondes
-      return 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white shadow-lg hover:shadow-green-500/50';
+    
+    if (hunt.isWaiting) {
+      if (timeToStart <= 900) { // 15 minutes = 900 secondes
+        return 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white shadow-lg hover:shadow-green-500/50';
+      }
+      return 'bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white shadow-lg hover:shadow-yellow-500/50';
     }
     
     return 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg hover:shadow-purple-500/50';
@@ -241,9 +324,17 @@ export default function Hunts() {
 
   const getButtonText = (hunt: Hunt) => {
     if (hunt.status === 'full') return 'Complet';
-    if (hunt.isWaiting) return 'En attente';
+    
     const timeToStart = Math.floor((hunt.date.getTime() - Date.now()) / 1000);
-    return timeToStart <= 900 ? 'Rejoindre' : "S'inscrire";
+    
+    if (hunt.isWaiting) {
+      if (timeToStart <= 900) { // 15 minutes = 900 secondes
+        return 'Rejoindre';
+      }
+      return 'En attente';
+    }
+    
+    return "S'inscrire";
   };
 
   const formatTimeToStart = (hunt: Hunt) => {
@@ -289,6 +380,10 @@ export default function Hunts() {
     <div className="min-h-screen bg-black text-white">
       <Head children={<>
         <title>Chasses disponibles - GRIM</title>
+        {/* Préchargement des sons */}
+        <link rel="preload" as="audio" href="/sounds/radio-start.mp3" />
+        <link rel="preload" as="audio" href="/sounds/radio-click.mp3" />
+        <link rel="preload" as="audio" href="/sounds/radio-end.mp3" />
       </>} />
 
       {/* Notification */}
@@ -307,6 +402,144 @@ export default function Hunts() {
             }`}>
               <span>{notification.type === 'success' ? '✅' : '❌'}</span>
               {notification.message}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Séquence de démarrage immersive */}
+      <AnimatePresence>
+        {showImmersiveStart && startingHunt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center"
+          >
+            <div className="relative w-full max-w-4xl p-8">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-center"
+              >
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  className="text-6xl font-bold mb-8 bg-gradient-to-r from-purple-500 to-pink-500 text-transparent bg-clip-text"
+                >
+                  Préparez-vous pour la chasse !
+                </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                  <motion.div
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-gray-900/80 rounded-2xl p-6"
+                  >
+                    <div className="text-2xl mb-4">🎯 Objectif</div>
+                    <div className="text-lg text-gray-300">
+                      Traquez ou échappez-vous dans les rues de {startingHunt.city}
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.7 }}
+                    className="bg-gray-900/80 rounded-2xl p-6"
+                  >
+                    <div className="text-2xl mb-4">👥 Participants</div>
+                    <div className="text-lg text-gray-300">
+                      {startingHunt.participants} chasseurs prêts pour l'action
+                    </div>
+                  </motion.div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                  <motion.div
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.9 }}
+                    className="bg-gray-900/80 rounded-2xl p-6"
+                  >
+                    <div className="text-2xl mb-4">🎭 Distribution des rôles</div>
+                    <div className="text-lg text-gray-300">
+                      <ul className="text-left space-y-2">
+                        <li>• 1 Grim mystérieux</li>
+                        <li>• Plusieurs chasseurs</li>
+                        <li>• Possible rôle spécial (niveau 10+ requis)</li>
+                      </ul>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 1.1 }}
+                    className="bg-gray-900/80 rounded-2xl p-6"
+                  >
+                    <div className="text-2xl mb-4">⭐ Rôles spéciaux</div>
+                    <div className="text-lg text-gray-300">
+                      <ul className="text-left space-y-2">
+                        <li>• Illusionniste : aide secrètement le Grim</li>
+                        <li>• Informateur : vend des infos aux deux camps</li>
+                        <li>• Saboteur : perturbe la traque</li>
+                      </ul>
+                    </div>
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  className="relative"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div
+                      className="w-32 h-32 rounded-full border-4 border-purple-500"
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [1, 0, 1],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  </div>
+                  <motion.div
+                    className="text-8xl font-bold relative z-10"
+                    animate={{
+                      scale: [1, 1.2, 1],
+                    }}
+                    transition={{
+                      duration: 0.5,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    {countdown}
+                  </motion.div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.2 }}
+                  className="mt-8 text-xl text-gray-400"
+                >
+                  Attribution des rôles dans quelques secondes...
+                </motion.div>
+              </motion.div>
             </div>
           </motion.div>
         )}
