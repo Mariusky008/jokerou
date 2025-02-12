@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -28,14 +28,27 @@ interface Notification {
 
 // Fonction utilitaire pour jouer les sons
 const playSound = (soundName: string) => {
-  const audio = new Audio(`/sounds/${soundName}.mp3`);
-  audio.volume = 0.7; // Augmenté à 70%
-  return audio.play().catch(error => {
-    console.error(`Erreur lors de la lecture du son ${soundName}:`, error);
-    // Tentative de relecture après un court délai
-    setTimeout(() => {
-      audio.play().catch(e => console.error('Deuxième tentative échouée:', e));
-    }, 100);
+  const audio = new Audio();
+  audio.src = `/sounds/${soundName}.mp3`;
+  audio.volume = 0.7;
+  
+  return new Promise((resolve, reject) => {
+    audio.addEventListener('canplaythrough', async () => {
+      try {
+        await audio.play();
+        resolve(true);
+      } catch (error) {
+        console.error(`Erreur lors de la lecture du son ${soundName}:`, error);
+        reject(error);
+      }
+    }, { once: true });
+
+    audio.addEventListener('error', (error) => {
+      console.error(`Erreur lors du chargement du son ${soundName}:`, error);
+      reject(error);
+    }, { once: true });
+
+    audio.load();
   });
 };
 
@@ -48,6 +61,9 @@ export default function Hunts() {
   const [showImmersiveStart, setShowImmersiveStart] = useState(false);
   const [startingHunt, setStartingHunt] = useState<Hunt | null>(null);
   const [countdown, setCountdown] = useState(5);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0.3);
   const [hunts, setHunts] = useState<Hunt[]>([
     {
       id: '5',
@@ -136,6 +152,37 @@ export default function Hunts() {
     setIsMounted(true);
   }, []);
 
+  // Initialisation unique de l'audio
+  useEffect(() => {
+    const audio = new Audio('/sounds/ambient.mp3');
+    audio.loop = true;
+    audio.volume = 0.3;
+    audioRef.current = audio;
+
+    // Afficher la notification pour informer l'utilisateur
+    setNotification({
+      message: 'Cliquez sur le bouton 🔈 pour activer la musique d\'ambiance',
+      type: 'success'
+    });
+
+    // Essayer de démarrer automatiquement
+    const startAudio = async () => {
+      try {
+        await audio.play();
+        setIsMusicPlaying(true);
+      } catch (error) {
+        console.log('Démarrage automatique impossible - interaction utilisateur requise');
+      }
+    };
+    startAudio();
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
   // Modification du useEffect pour la mise à jour des timers
   useEffect(() => {
     if (!isMounted) return;
@@ -176,6 +223,56 @@ export default function Hunts() {
       };
     }
   }, [showImmersiveStart, countdown]);
+
+  const toggleMusic = async () => {
+    try {
+      if (!audioRef.current) return;
+
+      if (!isMusicPlaying) {
+        await audioRef.current.play();
+        setIsMusicPlaying(true);
+        setNotification({
+          message: 'Musique d\'ambiance activée',
+          type: 'success'
+        });
+        setTimeout(() => setNotification(null), 2000);
+      } else {
+        audioRef.current.pause();
+        setIsMusicPlaying(false);
+        setNotification({
+          message: 'Musique d\'ambiance désactivée',
+          type: 'success'
+        });
+        setTimeout(() => setNotification(null), 2000);
+      }
+    } catch (error) {
+      console.error('Erreur audio:', error);
+      setNotification({
+        message: 'Erreur lors de la lecture de la musique',
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 2000);
+    }
+  };
+
+  const adjustVolume = (volume: number) => {
+    setAudioVolume(volume);
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  };
+
+  // Charger le volume sauvegardé au montage
+  useEffect(() => {
+    const savedVolume = localStorage.getItem('audioVolume');
+    if (savedVolume !== null) {
+      const volume = parseFloat(savedVolume);
+      setAudioVolume(volume);
+      if (audioRef.current) {
+        audioRef.current.volume = volume;
+      }
+    }
+  }, []);
 
   const handleCreateHunt = (e: React.FormEvent) => {
     e.preventDefault();
@@ -378,13 +475,11 @@ export default function Hunts() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Head children={<>
+      <Head>
         <title>Chasses disponibles - GRIM</title>
-        {/* Préchargement des sons */}
-        <link rel="preload" as="audio" href="/sounds/radio-start.mp3" />
-        <link rel="preload" as="audio" href="/sounds/radio-click.mp3" />
-        <link rel="preload" as="audio" href="/sounds/radio-end.mp3" />
-      </>} />
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
 
       {/* Notification */}
       <AnimatePresence>
@@ -455,7 +550,7 @@ export default function Hunts() {
                     transition={{ delay: 0.7 }}
                     className="bg-gray-900/80 rounded-2xl p-6"
                   >
-                    <div className="text-2xl mb-4">👥 Participants</div>
+                    <div className="text-2xl mb-4">Participants</div>
                     <div className="text-lg text-gray-300">
                       {startingHunt.participants} chasseurs prêts pour l'action
                     </div>
@@ -544,6 +639,56 @@ export default function Hunts() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Bouton de musique flottant avec notification */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <div className="bg-gray-900/90 rounded-full shadow-lg p-4 flex items-center gap-4">
+          <button
+            onClick={toggleMusic}
+            className="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center transition-all duration-300 group relative"
+            title={isMusicPlaying ? "Couper la musique" : "Jouer la musique"}
+          >
+            {isMusicPlaying ? (
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className="text-2xl"
+              >
+                🔊
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className="text-2xl"
+              >
+                🔈
+              </motion.div>
+            )}
+            {!isMusicPlaying && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute -top-12 whitespace-nowrap bg-gray-900 px-4 py-2 rounded-full text-sm"
+              >
+                Cliquez pour activer la musique
+              </motion.div>
+            )}
+          </button>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={audioVolume}
+              onChange={(e) => adjustVolume(parseFloat(e.target.value))}
+              className="w-24 accent-purple-500"
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="container mx-auto px-4 py-8">
         <Link href="/" className="text-purple-500 hover:text-purple-400 mb-8 inline-block">
