@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import GameRules from '../components/GameRules';
 
 interface Hunt {
   id: string;
@@ -17,6 +18,7 @@ interface Hunt {
   };
   timeToStart?: number; // Temps restant en secondes
   isWaiting?: boolean; // Pour suivre si l'utilisateur est inscrit
+  inviteLink: string;
 }
 
 interface Notification {
@@ -29,6 +31,7 @@ export default function Hunts() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
+  const [showRules, setShowRules] = useState(false);
   const [hunts, setHunts] = useState<Hunt[]>([
     {
       id: '1',
@@ -41,7 +44,8 @@ export default function Hunts() {
         name: 'Admin',
         avatar: '👑'
       },
-      timeToStart: 600 // Initialisation du timeToStart
+      timeToStart: 600, // Initialisation du timeToStart
+      inviteLink: ''
     },
     {
       id: '2',
@@ -54,7 +58,8 @@ export default function Hunts() {
         name: 'Marie',
         avatar: '👤'
       },
-      timeToStart: 7200
+      timeToStart: 7200,
+      inviteLink: ''
     },
     {
       id: '3',
@@ -67,7 +72,8 @@ export default function Hunts() {
         name: 'Lucas',
         avatar: '👤'
       },
-      timeToStart: 86400
+      timeToStart: 86400,
+      inviteLink: ''
     }
   ]);
 
@@ -75,7 +81,8 @@ export default function Hunts() {
     city: '',
     date: '',
     time: '',
-    maxParticipants: 12
+    maxParticipants: 12,
+    inviteLink: ''
   });
 
   // Ajout d'un état pour suivre si le composant est monté
@@ -101,7 +108,26 @@ export default function Hunts() {
 
   const handleCreateHunt = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Vérifier si l'utilisateur est authentifié
+    const isAuthenticated = false; // À remplacer par votre logique d'authentification réelle
+    
+    if (!isAuthenticated) {
+      setNotification({
+        message: 'Veuillez vous connecter pour créer une chasse',
+        type: 'error'
+      });
+      setTimeout(() => {
+        router.push('/auth');
+      }, 1500);
+      return;
+    }
+
     const dateTime = new Date(`${newHunt.date}T${newHunt.time}`);
+    
+    // Générer un ID unique pour le lien d'invitation
+    const inviteId = Math.random().toString(36).substring(2, 15);
+    const inviteLink = `${window.location.origin}/hunts/join/${inviteId}`;
     
     const hunt: Hunt = {
       id: Date.now().toString(),
@@ -113,16 +139,19 @@ export default function Hunts() {
       creator: {
         name: 'Vous',
         avatar: '👤'
-      }
+      },
+      timeToStart: 0,
+      isWaiting: false,
+      inviteLink
     };
 
     setHunts(prev => [...prev, hunt]);
-    setShowCreateModal(false);
     setNewHunt({
       city: '',
       date: '',
       time: '',
-      maxParticipants: 12
+      maxParticipants: 12,
+      inviteLink: inviteLink
     });
     
     setNotification({
@@ -133,6 +162,20 @@ export default function Hunts() {
   };
 
   const handleJoinHunt = (huntId: string) => {
+    // Vérifier si l'utilisateur est authentifié
+    const isAuthenticated = false; // À remplacer par votre logique d'authentification réelle
+    
+    if (!isAuthenticated) {
+      setNotification({
+        message: 'Veuillez vous connecter pour rejoindre une chasse',
+        type: 'error'
+      });
+      setTimeout(() => {
+        router.push('/auth');
+      }, 1500);
+      return;
+    }
+
     setHunts(prev => prev.map(hunt => {
       if (hunt.id === huntId && hunt.participants < hunt.maxParticipants) {
         const timeToStart = Math.floor((hunt.date.getTime() - Date.now()) / 1000);
@@ -225,6 +268,23 @@ export default function Hunts() {
     return `Début dans ${minutes}m ${seconds}s`;
   };
 
+  const copyInviteLink = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setNotification({
+        message: 'Lien d\'invitation copié !',
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      setNotification({
+        message: 'Erreur lors de la copie du lien',
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Head children={<>
@@ -262,6 +322,13 @@ export default function Hunts() {
             Chasses disponibles
           </h1>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowRules(true)}
+              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
+            >
+              <span>📜</span>
+              Règles du jeu
+            </button>
             <Link
               href="/profile"
               className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
@@ -296,7 +363,7 @@ export default function Hunts() {
                   <div>
                     <h2 className="text-xl font-bold">Chasse à {hunt.city}</h2>
                     <p className="text-gray-400">{formatDate(hunt.date)}</p>
-                    <p className="text-sm text-purple-400">{formatTimeToStart(hunt)}</p>
+                    <p className="text-lg font-semibold text-center mt-2 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">{formatTimeToStart(hunt)}</p>
                   </div>
                 </div>
 
@@ -316,13 +383,25 @@ export default function Hunts() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleJoinHunt(hunt.id)}
-                    disabled={hunt.status === 'full' || hunt.isWaiting}
-                    className={`px-6 py-2 rounded-full font-bold transition-all duration-300 ${getButtonStyle(hunt)}`}
-                  >
-                    {getButtonText(hunt)}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleJoinHunt(hunt.id)}
+                      disabled={hunt.status === 'full' || hunt.isWaiting}
+                      className={`px-6 py-2 rounded-full font-bold transition-all duration-300 ${getButtonStyle(hunt)}`}
+                    >
+                      {getButtonText(hunt)}
+                    </button>
+                    {hunt.status !== 'full' && (
+                      <button
+                        onClick={() => copyInviteLink(`${window.location.origin}/hunts/join/${hunt.id}`)}
+                        className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-full transition-colors flex items-center gap-2"
+                        title="Copier le lien d'invitation"
+                      >
+                        <span>📋</span>
+                        Inviter
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -395,10 +474,46 @@ export default function Hunts() {
                 />
               </div>
 
+              {newHunt.inviteLink && (
+                <div className="mt-4 p-4 bg-gray-800 rounded-lg">
+                  <label className="block text-gray-400 mb-2">
+                    Lien d'invitation
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newHunt.inviteLink}
+                      readOnly
+                      className="flex-1 bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => copyInviteLink(newHunt.inviteLink)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <span>📋</span>
+                      Copier
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Partagez ce lien avec vos amis pour les inviter à rejoindre la chasse
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-end gap-4 mt-6">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setNewHunt({
+                      city: '',
+                      date: '',
+                      time: '',
+                      maxParticipants: 12,
+                      inviteLink: ''
+                    });
+                  }}
                   className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
                 >
                   Annuler
@@ -414,6 +529,9 @@ export default function Hunts() {
           </div>
         </div>
       )}
+
+      {/* Modal des règles */}
+      <GameRules isOpen={showRules} onClose={() => setShowRules(false)} />
 
       <style jsx>{`
         .shadow-neon {

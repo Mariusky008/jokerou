@@ -19,6 +19,7 @@ export default function Auth() {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
+  const { returnUrl } = router.query;
 
   const validateAge = (year: string): boolean => {
     const currentYear = new Date().getFullYear();
@@ -51,8 +52,13 @@ export default function Auth() {
 
     // TODO: Implémenter la logique d'authentification
     console.log('Form submitted:', formData);
-    // Redirection vers la page des chasses après authentification
-    router.push('/hunts');
+    
+    // Redirection vers la page précédente ou la page des chasses
+    if (typeof returnUrl === 'string' && returnUrl.startsWith('/')) {
+      router.push(returnUrl);
+    } else {
+      router.push('/hunts');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
