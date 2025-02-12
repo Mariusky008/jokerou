@@ -530,10 +530,10 @@ const Map = forwardRef<LeafletMap, MapProps>(({ showGrim, onPlayerSelect, specia
         zoom={13}
         style={{ height: '600px', width: '100%', borderRadius: '1rem' }}
         ref={mapRef}
-        whenCreated={(map: LeafletMap) => {
-          mapRef.current = map;
+        whenReady={(map: { target: LeafletMap }) => {
+          mapRef.current = map.target;
           if (ref) {
-            (ref as React.MutableRefObject<LeafletMap>).current = map;
+            (ref as React.MutableRefObject<LeafletMap>).current = map.target;
           }
         }}
       >
