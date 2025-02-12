@@ -93,6 +93,13 @@ interface EventNotification {
   timestamp: number;
 }
 
+interface Effect {
+  type: 'reward' | 'zone';
+  color: string;
+  position?: [number, number];
+  duration?: number;
+}
+
 interface PossibleEvent {
   id: string;
   name: string;

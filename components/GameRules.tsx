@@ -237,89 +237,151 @@ export default function GameRules({ isOpen, onClose }: GameRulesProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           onClick={onClose}
         >
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            className="bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl w-full max-w-4xl shadow-2xl border border-gray-700/50"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-gray-900 rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
             onClick={e => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="p-6 border-b border-gray-700/50 flex justify-between items-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                <span className="text-purple-400">📖</span>
-                Règles du jeu
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-white hover:bg-gray-700/50 p-2 rounded-lg transition-colors"
-              >
-                ✕
-              </button>
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+              Règles du jeu
+            </h2>
+
+            {/* Navigation des onglets */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              {tabs.map(tab => (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+                    activeTab === tab.id
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="text-xl">{tab.icon}</span>
+                  <span className="font-medium">{tab.name}</span>
+                </motion.button>
+              ))}
             </div>
 
-            {/* Navigation */}
-            <div className="border-b border-gray-700/50 bg-gray-900/50">
-              <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 p-2">
-                {tabs.map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`p-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${
-                      activeTab === tab.id
-                        ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
+            {/* Contenu principal en deux colonnes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Colonne de gauche avec image et points clés */}
+              <div className="space-y-6">
+                <div className="relative h-48 rounded-xl overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900 flex items-center justify-center group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-pink-600/20 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="w-20 h-20 bg-purple-600/30 rounded-full flex items-center justify-center mb-4"
+                    >
+                      <span className="text-4xl">{tabs.find(t => t.id === activeTab)?.icon}</span>
+                    </motion.div>
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-center px-6"
+                    >
+                      <h3 className="text-xl font-bold text-white mb-2">{tabs.find(t => t.id === activeTab)?.name}</h3>
+                      <p className="text-sm text-purple-200">Maîtrisez les règles pour devenir un joueur d'élite</p>
+                    </motion.div>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                </div>
+
+                {/* Points clés de la section active */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-purple-900/30 p-6 rounded-xl border border-purple-500/20"
+                >
+                  <h3 className="text-xl font-semibold mb-4 text-purple-400 flex items-center gap-2">
+                    <span className="text-2xl">🎯</span>
+                    Points clés
+                  </h3>
+                  <ul className="space-y-3">
+                    {rules[activeTab as keyof typeof rules][0].content.slice(0, 3).map((point, index) => (
+                      <motion.li 
+                        key={index}
+                        className="flex items-center gap-3 bg-purple-500/10 p-3 rounded-lg"
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <span className="text-purple-400 text-xl">✓</span>
+                        <span>{point}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+                </motion.div>
+              </div>
+
+              {/* Colonne de droite avec les détails */}
+              <div className="space-y-6">
+                {rules[activeTab as keyof typeof rules].map((section, index) => (
+                  <motion.div
+                    key={section.title}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="bg-gray-800/50 p-6 rounded-xl"
                   >
-                    <span className="text-xl">{tab.icon}</span>
-                    <span className="text-sm font-medium hidden sm:inline">{tab.name}</span>
-                  </button>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-purple-600/30 rounded-xl flex items-center justify-center">
+                        <span className="text-2xl">{tabs.find(t => t.id === activeTab)?.icon}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-purple-400">{section.title}</h3>
+                        <p className="text-sm text-gray-400">Section {index + 1} sur {rules[activeTab as keyof typeof rules].length}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3 ml-4 border-l-2 border-purple-500/20 pl-4">
+                      {section.content.map((item, i) => (
+                        <p key={i} className="text-gray-300">• {item}</p>
+                      ))}
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
 
-            {/* Contenu */}
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
-              {rules[activeTab as keyof typeof rules] && (
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {rules[activeTab as keyof typeof rules].map((section, index) => (
-                    <div key={section.title} className="mb-6 last:mb-0">
-                      <div className="bg-gray-800/50 rounded-lg p-4 backdrop-blur-sm">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 pb-3 border-b border-gray-700/50">
-                          <span className="text-purple-400 text-xl">
-                            {activeTab === 'basic' ? '📜' :
-                             activeTab === 'roles' ? '🎭' :
-                             activeTab === 'powers' ? '⚡' :
-                             activeTab === 'points' ? '🏆' :
-                             activeTab === 'zones' ? '🎯' : '🤝'}
-                          </span>
-                          {section.title}
-                        </h3>
-                        <ul className="grid gap-3">
-                          {section.content && section.content.map((item, i) => (
-                            <li
-                              key={i}
-                              className="text-gray-300 bg-gray-800/30 p-3 rounded-lg hover:bg-gray-800/50 hover:text-white transition-all duration-200 flex items-start gap-3"
-                            >
-                              <span className="text-purple-400 mt-1">•</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </div>
+            {/* Bannière de conseil en bas */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-8 bg-gradient-to-r from-purple-900/30 to-pink-900/30 p-4 rounded-xl flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                <span className="text-2xl">💡</span>
+                <p className="text-sm text-gray-300">
+                  <span className="font-semibold text-purple-400">Conseil :</span> Commencez par maîtriser les règles de base avant de vous lancer dans des stratégies avancées
+                </p>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-2 bg-purple-600 rounded-lg text-sm font-medium hover:bg-purple-500 transition-colors"
+                onClick={onClose}
+              >
+                Compris !
+              </motion.button>
+            </motion.div>
           </motion.div>
         </motion.div>
       )}

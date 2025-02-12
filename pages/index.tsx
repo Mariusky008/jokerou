@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import GameRules from '../components/GameRules';
 
 interface Player {
@@ -50,11 +50,198 @@ const initialPlayers = [
   }
 ];
 
+// Ajout du composant SafetyZoneModal
+const SafetyZoneModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  if (!isOpen) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-gray-900 rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        >
+          ✕
+        </button>
+
+        <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+          Zone de jeu sécurisée
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Section de gauche avec image et points clés */}
+          <div className="space-y-6">
+            <div className="relative h-48 rounded-xl overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900 flex items-center justify-center group">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 to-pink-600/20 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-20 h-20 bg-purple-600/30 rounded-full flex items-center justify-center mb-4"
+                >
+                  <span className="text-4xl">🛡️</span>
+                </motion.div>
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center px-6"
+                >
+                  <h3 className="text-xl font-bold text-white mb-2">Votre sécurité est notre priorité</h3>
+                  <p className="text-sm text-purple-200">Protection active 24/7 pour une expérience de jeu sereine</p>
+                </motion.div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            </div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-purple-900/30 p-6 rounded-xl border border-purple-500/20"
+            >
+              <h3 className="text-xl font-semibold mb-4 text-purple-400 flex items-center gap-2">
+                <span className="text-2xl">🎯</span>
+                Points clés
+              </h3>
+              <ul className="space-y-3">
+                <motion.li 
+                  className="flex items-center gap-3 bg-purple-500/10 p-3 rounded-lg"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-purple-400 text-xl">✓</span>
+                  <span>Modération 24/7</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-center gap-3 bg-purple-500/10 p-3 rounded-lg"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-purple-400 text-xl">✓</span>
+                  <span>Zones sécurisées</span>
+                </motion.li>
+                <motion.li 
+                  className="flex items-center gap-3 bg-purple-500/10 p-3 rounded-lg"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <span className="text-purple-400 text-xl">✓</span>
+                  <span>Protection RGPD</span>
+                </motion.li>
+              </ul>
+            </motion.div>
+          </div>
+
+          {/* Section de droite avec les onglets */}
+          <div className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gray-800/50 p-6 rounded-xl"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-purple-600/30 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🛡️</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-purple-400">Sécurité et modération</h3>
+                  <p className="text-sm text-gray-400">Protection active des joueurs</p>
+                </div>
+              </div>
+              <div className="space-y-3 ml-4 border-l-2 border-purple-500/20 pl-4">
+                <p className="text-gray-300">• Signalement en temps réel</p>
+                <p className="text-gray-300">• Modérateurs actifs 24/7</p>
+                <p className="text-gray-300">• Filtrage automatique</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-gray-800/50 p-6 rounded-xl"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-blue-600/30 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🎮</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-blue-400">Zones de jeu</h3>
+                  <p className="text-sm text-gray-400">Périmètres sécurisés</p>
+                </div>
+              </div>
+              <div className="space-y-3 ml-4 border-l-2 border-blue-500/20 pl-4">
+                <p className="text-gray-300">• Zones clairement définies</p>
+                <p className="text-gray-300">• Alertes automatiques</p>
+                <p className="text-gray-300">• Adaptation dynamique</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-800/50 p-6 rounded-xl"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-green-600/30 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🔒</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-green-400">Protection des données</h3>
+                  <p className="text-sm text-gray-400">Conformité RGPD</p>
+                </div>
+              </div>
+              <div className="space-y-3 ml-4 border-l-2 border-green-500/20 pl-4">
+                <p className="text-gray-300">• Données cryptées</p>
+                <p className="text-gray-300">• Localisation sécurisée</p>
+                <p className="text-gray-300">• Respect de la vie privée</p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Bannière de confiance en bas */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-8 bg-gradient-to-r from-purple-900/30 to-pink-900/30 p-4 rounded-xl flex items-center justify-between"
+        >
+          <div className="flex items-center gap-4">
+            <span className="text-2xl">🔰</span>
+            <p className="text-sm text-gray-300">
+              <span className="font-semibold text-purple-400">100% sécurisé</span> - Plus de 10 000 parties jouées en toute sécurité
+            </p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-4 py-2 bg-purple-600 rounded-lg text-sm font-medium hover:bg-purple-500 transition-colors"
+            onClick={onClose}
+          >
+            Compris !
+          </motion.button>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 export default function Home() {
   const [nextGameTime, setNextGameTime] = useState<string>('');
   const [isHovering, setIsHovering] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
   const [showRules, setShowRules] = useState(false);
+  const [showSafetyZone, setShowSafetyZone] = useState(false);
   const [playerPositions, setPlayerPositions] = useState(initialPlayers);
 
   const features = [
@@ -162,8 +349,10 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </>} />
 
-      {/* Modal des règles */}
+      
+      {/* Modals */}
       <GameRules isOpen={showRules} onClose={() => setShowRules(false)} />
+      <SafetyZoneModal isOpen={showSafetyZone} onClose={() => setShowSafetyZone(false)} />
 
       {/* Hero Section avec Vidéo Background */}
       <div className="relative h-screen overflow-hidden">
@@ -351,21 +540,18 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.5 }}
-              className="grid grid-cols-3 gap-8 mb-12"
+              className="grid grid-cols-2 gap-8 mb-12"
             >
               <div className="bg-purple-900/30 backdrop-blur-sm p-4 rounded-xl border border-purple-500/20">
-                <div className="text-2xl font-bold text-purple-400">16 participants</div>
+                <div className="text-2xl font-bold text-purple-400">16</div>
                 <div className="text-sm text-gray-400">1 Grim</div>
                 <div className="text-sm text-gray-400">15 Chasseurs</div>
               </div>
               <div className="bg-pink-900/30 backdrop-blur-sm p-4 rounded-xl border border-pink-500/20">
-                <div className="text-2xl font-bold text-pink-400">3</div>
-                <div className="text-sm text-gray-400">Parties en cours</div>
-              </div>
-              <div className="bg-purple-900/30 backdrop-blur-sm p-4 rounded-xl border border-purple-500/20">
-                <div className="text-2xl font-bold text-purple-400">2.5 km</div>
+                <div className="text-2xl font-bold text-pink-400">2.5 km</div>
                 <div className="text-sm text-gray-400">Zone de jeu</div>
               </div>
+              
             </motion.div>
 
             <div className="flex flex-col gap-6 justify-center items-center">
@@ -398,12 +584,12 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text"
+            className="text-4xl md:text-5xl font-bold text-center mb-12 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent"
           >
             Comment ça marche ?
           </motion.h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -460,21 +646,27 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Bouton Règles du jeu */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 flex justify-center"
-          >
-            <button
-              onClick={() => setShowRules(true)}
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 flex items-center gap-3 shadow-xl hover:shadow-2xl"
+          {/* Boutons d'action */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowSafetyZone(true)}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-3"
             >
-              <span className="text-2xl">📜</span>
-              Voir les règles complètes du jeu
-            </button>
-          </motion.div>
+              <span className="text-xl">🛡️</span>
+              Zone sécurisée
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowRules(true)}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-3"
+            >
+              <span className="text-xl">📜</span>
+              Règles du jeu
+            </motion.button>
+          </div>
         </div>
       </section>
 
@@ -1188,104 +1380,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Section Zone de jeu sécurisée */}
-      <section className="py-20 bg-gradient-to-b from-purple-900/20 to-black">
+      {/* Section CTA finale */}
+      <section className="py-20 bg-gradient-to-b from-black to-purple-900/20">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center max-w-4xl mx-auto"
           >
-            <h2 className="text-4xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
-                Zone de jeu sécurisée
-              </span>
-            </h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Pour garantir une expérience équitable et sécurisée
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
-            >
-              <div className="text-4xl mb-6">🎯</div>
-              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
-                Périmètre défini
-              </h3>
-              <p className="text-gray-300 leading-relaxed">
-                Avant chaque partie, une zone de jeu est clairement délimitée sur la carte. Cette zone est soigneusement choisie pour offrir une expérience de jeu optimale et sécurisée.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20"
-            >
-              <div className="text-4xl mb-6">⚠️</div>
-              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
-                Règle d'élimination
-              </h3>
-              <p className="text-gray-300 leading-relaxed">
-                Sortir de la zone délimitée entraîne une élimination immédiate. Cette règle s'applique à tous les joueurs, Grim comme Chasseurs, pour maintenir l'équilibre du jeu.
-              </p>
-            </motion.div>
-          </div>
-
-          <div className="mt-12 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-6 rounded-2xl inline-block backdrop-blur-sm border border-purple-500/20"
-            >
-              <p className="text-gray-300">
-                <span className="text-purple-400 font-bold">Note importante :</span> La zone de jeu est visible en permanence sur la carte et des alertes vous préviendront si vous vous en approchez trop près.
-              </p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section CTA finale */}
-      <section className="py-20 bg-gradient-to-b from-purple-900/20 to-black relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
-        <div className="container mx-auto px-4 relative">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto text-center"
-          >
-            <h2 className="text-5xl font-bold mb-8">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
                 Prêt à relever le défi ?
               </span>
             </h2>
-            <p className="text-2xl text-gray-300 mb-12">
-              Rejoignez la communauté Grim et vivez une expérience de jeu unique
+            <p className="text-lg md:text-xl text-gray-400 mb-8 px-4">
+              Rejoignez la communauté GRIM et participez à une expérience de jeu unique
             </p>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-block"
+            <Link
+              href="/auth"
+              className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-base md:text-lg"
             >
-              <Link href="/auth" 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-2xl py-6 px-16 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50"
-              >
-                Créer un compte gratuitement
-              </Link>
-            </motion.div>
-            <p className="mt-6 text-gray-400">
-              Déjà plus de 1000 joueurs nous font confiance
-            </p>
+              Créer un compte gratuitement
+            </Link>
           </motion.div>
         </div>
       </section>
