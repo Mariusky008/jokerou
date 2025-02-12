@@ -9,13 +9,15 @@ export default function Auth() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     username: '',
     city: '',
     birthYear: ''
   });
   const [formErrors, setFormErrors] = useState({
     birthYear: '',
-    terms: ''
+    terms: '',
+    password: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
@@ -40,11 +42,20 @@ export default function Auth() {
         return;
       }
 
+      // Validation du mot de passe
+      if (formData.password !== formData.confirmPassword) {
+        setFormErrors(prev => ({
+          ...prev,
+          password: "Les mots de passe ne correspondent pas."
+        }));
+        return;
+      }
+
       // Validation des CGU et RGPD
       if (!acceptedTerms) {
         setFormErrors(prev => ({
           ...prev,
-          terms: "Vous devez accepter les CGU et la politique de confidentialité pour continuer."
+          terms: "Vous devez accepter les conditions d'utilisation et la politique de confidentialité pour continuer."
         }));
         return;
       }
@@ -168,6 +179,51 @@ export default function Auth() {
             </>
           )}
 
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-gray-300 mb-2" htmlFor="password">
+                  Mot de passe
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 mb-2" htmlFor="confirmPassword">
+                  Confirmer le mot de passe
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 ${
+                    formErrors.password ? 'focus:ring-red-500 border-red-500' : 'focus:ring-purple-500'
+                  }`}
+                  required
+                />
+                {formErrors.password && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-500 text-sm mt-2"
+                  >
+                    {formErrors.password}
+                  </motion.p>
+                )}
+              </div>
+            </>
+          )}
+
           <div>
             <label className="block text-gray-300 mb-2" htmlFor="email">
               Email
@@ -177,21 +233,6 @@ export default function Auth() {
               id="email"
               name="email"
               value={formData.email}
-              onChange={handleChange}
-              className="w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-300 mb-2" htmlFor="password">
-              Mot de passe
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
               onChange={handleChange}
               className="w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
@@ -217,41 +258,50 @@ export default function Auth() {
 
           {!isLogin && (
             <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={acceptedTerms}
-                  onChange={(e) => {
-                    setAcceptedTerms(e.target.checked);
-                    if (e.target.checked) {
-                      setFormErrors(prev => ({ ...prev, terms: '' }));
-                    }
-                  }}
-                  className="mt-1.5"
-                />
-                <label htmlFor="terms" className="text-sm text-gray-300">
-                  J'accepte les{' '}
-                  <Link href="/legal/conditions-utilisation" className="text-purple-400 hover:text-purple-300 underline">
-                    conditions générales d'utilisation
-                  </Link>
-                  {' '}et la{' '}
-                  <Link href="/legal/politique-confidentialite" className="text-purple-400 hover:text-purple-300 underline">
-                    politique de confidentialité
-                  </Link>
-                </label>
+              <div className="bg-gray-800/80 p-6 rounded-xl border-2 border-purple-500/30">
+                <div className="flex items-start gap-4">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={acceptedTerms}
+                    onChange={(e) => {
+                      setAcceptedTerms(e.target.checked);
+                      if (e.target.checked) {
+                        setFormErrors(prev => ({ ...prev, terms: '' }));
+                      }
+                    }}
+                    className="mt-1.5 w-5 h-5 rounded border-2 border-purple-500 text-purple-600 focus:ring-purple-500"
+                  />
+                  <label htmlFor="terms" className="text-lg text-gray-300">
+                    <span className="font-semibold">J'accepte :</span>
+                    <ul className="mt-2 space-y-2">
+                      <li className="flex items-center gap-2">
+                        <span className="text-purple-400">•</span>
+                        <Link href="/legal/conditions-utilisation" className="text-purple-400 hover:text-purple-300 underline">
+                          Les conditions générales d'utilisation
+                        </Link>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-purple-400">•</span>
+                        <Link href="/legal/politique-confidentialite" className="text-purple-400 hover:text-purple-300 underline">
+                          La politique de confidentialité
+                        </Link>
+                      </li>
+                    </ul>
+                  </label>
+                </div>
+                {formErrors.terms && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-500 text-base mt-4 bg-red-500/10 p-3 rounded-lg"
+                  >
+                    {formErrors.terms}
+                  </motion.p>
+                )}
               </div>
-              {formErrors.terms && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-red-500 text-sm"
-                >
-                  {formErrors.terms}
-                </motion.p>
-              )}
               <div className="bg-gray-800/50 p-4 rounded-lg">
-                <p className="text-sm text-gray-400">
+                <p className="text-base text-gray-300">
                   En vous inscrivant, vous acceptez que vos données personnelles soient traitées conformément à notre politique de confidentialité, dans le respect du RGPD.
                 </p>
               </div>
