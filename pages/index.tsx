@@ -495,14 +495,7 @@ export default function Home() {
             transition={{ duration: 1 }}
             className="relative w-full max-w-4xl mx-auto"
           >
-            {/* Badge "En direct" recentré */}
-            <div className="absolute left-1/2 -translate-x-1/2 -top-28 flex items-center justify-center w-full">
-              <div className="bg-gradient-to-r from-purple-500/20 to-transparent px-4 py-2 rounded-full relative overflow-hidden group hover:from-purple-500/30 transition-all duration-300 flex items-center gap-2">
-                <span className="text-purple-400">🎮</span>
-                <span className="text-purple-400 whitespace-nowrap">EN DIRECT</span>
-                <span className="text-sm text-purple-400/80 ml-2">3 parties en cours</span>
-              </div>
-            </div>
+           
 
             {/* Titre principal avec effet de glitch */}
             <h1 className="text-8xl font-black mb-8 relative">
@@ -530,7 +523,7 @@ export default function Home() {
                   <span className="font-mono bg-purple-500/20 px-2 py-1 rounded">18:00</span>à
                   <span className="font-mono bg-purple-500/20 px-2 py-1 rounded">21:00</span>
 
-                  <span className="text-purple-400"> dans votre ville</span>
+                  
                 </motion.span>
               </p>
             </motion.div>

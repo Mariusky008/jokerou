@@ -409,18 +409,24 @@ export default function Hunts() {
     try {
       await navigator.clipboard.writeText(link);
       setNotification({
-        message: 'Lien d\'invitation copié !',
+        message: "Lien d'invitation copié ! Vous pouvez maintenant l'envoyer à qui vous voulez pour qu'il rejoigne la partie.",
         type: 'success'
       });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => {
+        setNotification(null);
+      }, 4000);
     } catch (err) {
       setNotification({
-        message: 'Erreur lors de la copie du lien',
+        message: "Erreur lors de la copie du lien",
         type: 'error'
       });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => {
+        setNotification(null);
+      }, 4000);
     }
   };
+
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -648,7 +654,66 @@ export default function Hunts() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
             Chasses disponibles
           </h1>
-          <div className="flex items-center gap-4">
+          
+          {/* Menu hamburger pour mobile */}
+          <div className="block lg:hidden relative">
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="bg-gray-800 p-3 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {/* Menu mobile */}
+            <AnimatePresence>
+              {showMobileMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="absolute right-0 mt-2 w-56 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
+                >
+                  <div className="p-2 space-y-2">
+                    <button
+                      onClick={() => {
+                        setShowRules(true);
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    >
+                      <span>📜</span>
+                      Règles du jeu
+                    </button>
+
+                    <Link
+                      href="/profile"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    >
+                      <span>👤</span>
+                      Mon profil
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        setShowCreateModal(true);
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    >
+                      <span>🎯</span>
+                      Créer une chasse
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Menu desktop */}
+          <div className="hidden lg:flex items-center gap-4">
             <button
               onClick={() => setShowRules(true)}
               className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
@@ -658,9 +723,9 @@ export default function Hunts() {
             </button>
             <Link
               href="/profile"
-              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-1 px-2 md:py-3 md:px-6 text-xs md:text-base rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 md:gap-2"
+              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
             >
-              <span className="text-xs md:text-base">👤</span>
+              <span>👤</span>
               Mon profil
             </Link>
             <button
@@ -685,7 +750,7 @@ export default function Hunts() {
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-2xl">
-                    🎮
+                    🎭
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">Chasse à {hunt.city}</h2>
