@@ -1,10 +1,11 @@
 import '../styles/globals.css';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
+import { AudioProvider } from '../contexts/AudioContext';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <>
+    <AudioProvider>
       <Head children={<>
         <title>GRIM - Le jeu de traque urbain</title>
         <meta name="description" content="Grim - Un jeu de traque en temps réel dans votre ville" />
@@ -12,6 +13,6 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="icon" href="/favicon.ico" />
       </>} />
       <Component {...pageProps} />
-    </>
+    </AudioProvider>
   );
 } 

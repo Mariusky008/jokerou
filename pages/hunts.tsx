@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import GameRules from '../components/GameRules';
+import { useAudio } from '../contexts/AudioContext';
 
 interface Hunt {
   id: string;
@@ -61,9 +62,8 @@ export default function Hunts() {
   const [showImmersiveStart, setShowImmersiveStart] = useState(false);
   const [startingHunt, setStartingHunt] = useState<Hunt | null>(null);
   const [countdown, setCountdown] = useState(5);
+  const { isMusicPlaying, audioVolume, toggleMusic, adjustVolume } = useAudio();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [audioVolume, setAudioVolume] = useState(0.3);
   const [hunts, setHunts] = useState<Hunt[]>([
     {
       id: '5',
@@ -169,7 +169,6 @@ export default function Hunts() {
     const startAudio = async () => {
       try {
         await audio.play();
-        setIsMusicPlaying(true);
       } catch (error) {
         console.log('Démarrage automatique impossible - interaction utilisateur requise');
       }
@@ -223,56 +222,6 @@ export default function Hunts() {
       };
     }
   }, [showImmersiveStart, countdown]);
-
-  const toggleMusic = async () => {
-    try {
-      if (!audioRef.current) return;
-
-      if (!isMusicPlaying) {
-        await audioRef.current.play();
-        setIsMusicPlaying(true);
-        setNotification({
-          message: 'Musique d\'ambiance activée',
-          type: 'success'
-        });
-        setTimeout(() => setNotification(null), 2000);
-      } else {
-        audioRef.current.pause();
-        setIsMusicPlaying(false);
-        setNotification({
-          message: 'Musique d\'ambiance désactivée',
-          type: 'success'
-        });
-        setTimeout(() => setNotification(null), 2000);
-      }
-    } catch (error) {
-      console.error('Erreur audio:', error);
-      setNotification({
-        message: 'Erreur lors de la lecture de la musique',
-        type: 'error'
-      });
-      setTimeout(() => setNotification(null), 2000);
-    }
-  };
-
-  const adjustVolume = (volume: number) => {
-    setAudioVolume(volume);
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  };
-
-  // Charger le volume sauvegardé au montage
-  useEffect(() => {
-    const savedVolume = localStorage.getItem('audioVolume');
-    if (savedVolume !== null) {
-      const volume = parseFloat(savedVolume);
-      setAudioVolume(volume);
-      if (audioRef.current) {
-        audioRef.current.volume = volume;
-      }
-    }
-  }, []);
 
   const handleCreateHunt = (e: React.FormEvent) => {
     e.preventDefault();

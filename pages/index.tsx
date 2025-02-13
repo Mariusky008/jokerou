@@ -549,7 +549,8 @@ export default function Home() {
               </div>
               <div className="bg-pink-900/30 backdrop-blur-sm p-4 rounded-xl border border-pink-500/20">
                 <div className="text-2xl font-bold text-pink-400">2.5 km</div>
-                <div className="text-sm text-gray-400">Zone de jeu</div>
+                <div className="text-sm text-gray-400">Zone de traque</div>
+                <div className="text-sm text-gray-400">Zone de chasse</div>
               </div>
               
             </motion.div>

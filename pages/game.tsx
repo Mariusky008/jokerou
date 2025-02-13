@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import TalkieWalkie from '../components/TalkieWalkie';
 import Link from 'next/link';
 import EventEffects from '../components/EventEffects';
+import { useAudio } from '../contexts/AudioContext';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const Map = dynamic(
@@ -111,6 +112,15 @@ interface PossibleEvent {
 }
 
 export default function Game() {
+  const { toggleMusic, isMusicPlaying } = useAudio();
+
+  // Effet pour arrêter la musique au chargement de la page
+  useEffect(() => {
+    if (isMusicPlaying) {
+      toggleMusic();
+    }
+  }, []);
+
   const [isGrim] = useState(true);
   const [timeLeft, setTimeLeft] = useState(3600);
   const [showIntroPopup, setShowIntroPopup] = useState(true);

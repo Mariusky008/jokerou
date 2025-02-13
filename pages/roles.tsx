@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import GameRules from '../components/GameRules';
+import { useAudio } from '../contexts/AudioContext';
 
 interface Message {
   id: string;
@@ -30,6 +31,7 @@ export default function Roles() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [showRules, setShowRules] = useState(false);
+  const { isMusicPlaying, audioVolume, toggleMusic, adjustVolume } = useAudio();
   const [players, setPlayers] = useState<Player[]>([
     {
       id: '1',
@@ -325,7 +327,7 @@ export default function Roles() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Bouton des règles */}
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 mb-8">
           <button
             onClick={() => setShowRules(true)}
             className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-colors shadow-lg"
@@ -335,7 +337,48 @@ export default function Roles() {
           </button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        {/* Bouton de musique flottant */}
+        <div className="fixed bottom-4 left-4 z-50">
+          <div className="bg-gray-900/90 rounded-full shadow-lg p-4 flex items-center gap-4">
+            <button
+              onClick={toggleMusic}
+              className="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center transition-all duration-300 group relative"
+              title={isMusicPlaying ? "Couper la musique" : "Jouer la musique"}
+            >
+              {isMusicPlaying ? (
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="text-2xl"
+                >
+                  🔊
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  className="text-2xl"
+                >
+                  🔈
+                </motion.div>
+              )}
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={audioVolume}
+                onChange={(e) => adjustVolume(parseFloat(e.target.value))}
+                className="w-24 accent-purple-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-8 pt-20">
           {/* Section principale */}
           <div className="lg:col-span-2">
             {!isRevealed ? (
