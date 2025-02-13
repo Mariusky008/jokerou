@@ -777,7 +777,16 @@ export default function Game() {
   };
 
   return (
-    <div className="relative min-h-screen bg-black">
+    <div className="min-h-screen bg-black text-white relative">
+      {/* Bouton pour créer des événements */}
+      <button
+        onClick={handleCreateEvent}
+        className="fixed bottom-24 left-4 z-[9998] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-2 px-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
+      >
+        <span>⚡</span>
+        Créer un événement
+      </button>
+
       <Head>
         <title>Partie en cours - GRIM</title>
       </Head>
@@ -795,7 +804,7 @@ export default function Game() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="relative max-w-2xl p-8 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-purple-500/20"
+              className="relative max-w-2xl p-4 md:p-8 mx-4 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 border border-purple-500/20"
             >
               {/* Bouton de fermeture */}
               <button
@@ -824,7 +833,7 @@ export default function Game() {
                   initial={{ y: -20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent"
+                  className="text-2xl md:text-3xl font-bold text-center mb-4 md:mb-6 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent"
                 >
                   {isGrim ? "🎭 C'est parti, le Grim !" : "🎯 En chasse, Chasseur !"}
                 </motion.h2>
@@ -832,7 +841,7 @@ export default function Game() {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="space-y-4 text-lg text-gray-300"
+                  className="space-y-4 text-base md:text-lg text-gray-300"
                 >
                   <p className="text-center">
                     {isGrim 
@@ -877,9 +886,9 @@ export default function Game() {
           </div>
           <Link
             href="/profile"
-            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2"
+            className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-1 px-2 md:py-3 md:px-6 text-xs md:text-base rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 md:gap-2"
           >
-            <span>👤</span>
+            <span className="text-xs md:text-base">👤</span>
             Mon profil
           </Link>
         </motion.div>
@@ -948,6 +957,43 @@ export default function Game() {
                 specialZones={specialZones}
               />
             </motion.div>
+
+            {/* Événements spéciaux */}
+            <div className="space-y-2 mb-8">
+              <AnimatePresence>
+                {possibleEvents.map(event => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className={`p-3 rounded-lg backdrop-blur-sm transition-all duration-300 cursor-help
+                      ${event.isActive 
+                        ? `bg-gradient-to-r 
+                            ${event.rarity === 'legendary' ? 'from-yellow-600/80 to-yellow-500/80 shadow-yellow-500/50' :
+                              event.rarity === 'epic' ? 'from-purple-600/80 to-pink-500/80 shadow-purple-500/50' :
+                              event.rarity === 'rare' ? 'from-blue-600/80 to-cyan-500/80 shadow-blue-500/50' :
+                              'from-green-600/80 to-emerald-500/80 shadow-green-500/50'}
+                            shadow-lg animate-pulse`
+                        : 'bg-gray-800/50'
+                      }`}
+                    title={event.description}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{event.icon}</span>
+                      <div>
+                        <div className={`font-bold ${event.isActive ? 'text-white' : 'text-gray-400'}`}>
+                          {event.name}
+                        </div>
+                        <div className={`text-sm ${event.isActive ? 'text-gray-200' : 'text-gray-500'}`}>
+                          {event.rarity.charAt(0).toUpperCase() + event.rarity.slice(1)}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
 
             {/* Pouvoirs */}
             <motion.div
@@ -1145,51 +1191,6 @@ export default function Game() {
         onMessageStart={handleMessageStart}
         onMessageEnd={handleMessageEnd}
       />
-
-      {/* Section des événements possibles */}
-      <div className="fixed bottom-24 left-4 space-y-2 z-[9998]">
-        <AnimatePresence>
-          {possibleEvents.map(event => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className={`p-3 rounded-lg backdrop-blur-sm transition-all duration-300 cursor-help
-                ${event.isActive 
-                  ? `bg-gradient-to-r 
-                      ${event.rarity === 'legendary' ? 'from-yellow-600/80 to-yellow-500/80 shadow-yellow-500/50' :
-                        event.rarity === 'epic' ? 'from-purple-600/80 to-pink-500/80 shadow-purple-500/50' :
-                        event.rarity === 'rare' ? 'from-blue-600/80 to-cyan-500/80 shadow-blue-500/50' :
-                        'from-green-600/80 to-emerald-500/80 shadow-green-500/50'}
-                      shadow-lg animate-pulse`
-                  : 'bg-gray-800/50'
-                }`}
-              title={event.description}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{event.icon}</span>
-                <div>
-                  <div className={`font-bold ${event.isActive ? 'text-white' : 'text-gray-400'}`}>
-                    {event.name}
-                  </div>
-                  <div className={`text-sm ${event.isActive ? 'text-gray-200' : 'text-gray-500'}`}>
-                    {event.rarity.charAt(0).toUpperCase() + event.rarity.slice(1)}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {/* Bouton de test pour les événements */}
-      <button
-        onClick={handleCreateEvent}
-        className="fixed top-4 left-4 z-50 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-      >
-        Créer un événement
-      </button>
 
       <style jsx global>{`
         .shadow-neon {

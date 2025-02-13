@@ -658,9 +658,9 @@ export default function Hunts() {
             </button>
             <Link
               href="/profile"
-              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
+              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-1 px-2 md:py-3 md:px-6 text-xs md:text-base rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 md:gap-2"
             >
-              <span>👤</span>
+              <span className="text-xs md:text-base">👤</span>
               Mon profil
             </Link>
             <button

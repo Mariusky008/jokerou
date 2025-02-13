@@ -570,6 +570,21 @@ export default function Home() {
                   Inscription à la prochaine chasse
                 </Link>
               </motion.div>
+
+              {/* Nouveau bouton pour regarder une partie en direct */}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto relative group"
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                <Link href="/spectate" 
+                  className="relative w-full inline-block bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xl py-5 px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-blue-500/50 text-center flex items-center justify-center gap-3"
+                >
+                  <span>👁️</span>
+                  Regarder une partie en direct
+                </Link>
+              </motion.div>
             </div>
           </motion.div>
         </div>
