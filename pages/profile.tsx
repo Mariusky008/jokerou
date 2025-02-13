@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
 import GameRules from '../components/GameRules';
@@ -281,6 +281,9 @@ export default function Profile() {
     setMessages(prev => prev.map(m => ({ ...m, read: true })));
   };
 
+  // Ajouter ces states en haut du composant avec les autres states
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
       <Head>
@@ -290,12 +293,87 @@ export default function Profile() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header avec navigation et notifications */}
         <div className="flex justify-between items-center mb-8">
-          <Link href="/" className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2">
+          <Link href="/hunts" className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2">
             <span>←</span>
-            <span>Retour à l'accueil</span>
+            <span>Retour aux chasses</span>
           </Link>
-          <div className="flex items-center gap-4">
-            {/* Bouton messagerie */}
+
+          {/* Menu hamburger pour mobile */}
+          <div className="block lg:hidden relative">
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="bg-gray-800 p-3 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            {/* Menu mobile */}
+            <AnimatePresence>
+              {showMobileMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="absolute right-0 mt-2 w-56 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
+                >
+                  <div className="p-2 space-y-2">
+                    <button
+                      onClick={() => {
+                        setShowMessages(!showMessages);
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>💬</span>
+                        Messages
+                      </span>
+                      {unreadMessages > 0 && (
+                        <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                          {unreadMessages}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowNotifications(!showNotifications);
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>🔔</span>
+                        Notifications
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowRules(true);
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    >
+                      <span>📜</span>
+                      Règles du jeu
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Menu desktop */}
+          <div className="hidden lg:flex items-center gap-4">
+            {/* Boutons existants pour desktop */}
             <div className="relative">
               <button
                 onClick={() => setShowMessages(!showMessages)}
@@ -309,75 +387,8 @@ export default function Profile() {
                   </span>
                 )}
               </button>
-
-              {/* Menu des messages */}
-              {showMessages && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
-                >
-                  <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-                    <h3 className="font-bold">Messages</h3>
-                    {unreadMessages > 0 && (
-                      <button
-                        onClick={markAllMessagesAsRead}
-                        className="text-sm text-purple-400 hover:text-purple-300"
-                      >
-                        Tout marquer comme lu
-                      </button>
-                    )}
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {messages.length > 0 ? (
-                      messages.map((message) => (
-                        <motion.div
-                          key={message.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className={`p-4 border-b border-gray-700 last:border-0 hover:bg-gray-700/50 transition-colors cursor-pointer ${
-                            !message.read ? 'bg-purple-500/10' : ''
-                          }`}
-                          onClick={() => {
-                            markMessageAsRead(message.id);
-                            setSelectedPlayer({
-                              id: message.senderId,
-                              name: message.senderName,
-                              avatar: message.senderAvatar
-                            });
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                              {message.senderAvatar}
-                            </div>
-                            <div className="flex-1">
-                              <div className="font-medium">{message.senderName}</div>
-                              <div className="text-sm text-gray-400 line-clamp-2">{message.content}</div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {new Intl.RelativeTimeFormat('fr', { numeric: 'auto' }).format(
-                                  Math.floor((message.date.getTime() - Date.now()) / 3600000),
-                                  'hour'
-                                )}
-                              </div>
-                            </div>
-                            {!message.read && (
-                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-gray-400">
-                        Aucun message
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
             </div>
-            {/* Bouton notifications existant */}
+
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -391,65 +402,8 @@ export default function Profile() {
                   </span>
                 )}
               </button>
-
-              {/* Menu des notifications */}
-              {showNotifications && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-80 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
-                >
-                  <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-                    <h3 className="font-bold">Notifications</h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-sm text-purple-400 hover:text-purple-300"
-                      >
-                        Tout marquer comme lu
-                      </button>
-                    )}
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      notifications.map((notification) => (
-                        <motion.div
-                          key={notification.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className={`p-4 border-b border-gray-700 last:border-0 hover:bg-gray-700/50 transition-colors cursor-pointer ${
-                            !notification.read ? 'bg-purple-500/10' : ''
-                          }`}
-                          onClick={() => markAsRead(notification.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="text-2xl">{notification.icon}</div>
-                            <div className="flex-1">
-                              <div className="font-medium">{notification.title}</div>
-                              <div className="text-sm text-gray-400">{notification.description}</div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {new Intl.RelativeTimeFormat('fr', { numeric: 'auto' }).format(
-                                  Math.floor((notification.date.getTime() - Date.now()) / 3600000),
-                                  'hour'
-                                )}
-                              </div>
-                            </div>
-                            {!notification.read && (
-                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-gray-400">
-                        Aucune notification
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
             </div>
+
             <button
               onClick={() => setShowRules(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2"
@@ -463,7 +417,7 @@ export default function Profile() {
         {/* Section profil principale */}
         <div className="bg-gray-800 rounded-2xl p-6 mb-8 border border-purple-500/20">
           {!isEditing ? (
-            <div className="flex items-center gap-8">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-8">
               <div className="relative group">
                 <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center text-4xl shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300 overflow-hidden">
                   {profileData.isImage ? (
@@ -491,11 +445,11 @@ export default function Profile() {
                 </div>
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-2">
                   <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
                     {profileData.name}
                   </h1>
-                  <span className="px-3 py-1 bg-purple-600/20 rounded-full text-purple-400 text-sm">
+                  <span className="px-3 py-1 bg-purple-600/20 rounded-full text-purple-400 text-sm inline-block">
                     Niveau {stats.level}
                   </span>
                 </div>
@@ -517,8 +471,52 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Section des badges */}
-                <div className="mt-6">
+                {/* Section des badges pour mobile */}
+                <div className="mt-6 lg:hidden">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-sm font-medium text-gray-400">Badges obtenus</h3>
+                    <span className="text-xs text-purple-400">({badges.length})</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {badges.slice(0, 3).map((badge) => (
+                      <motion.button
+                        key={badge.id}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setActiveTab('badges');
+                          const element = document.querySelector('.tabs-section');
+                          if (element) {
+                            window.scrollTo({ top: (element as HTMLElement).offsetTop, behavior: 'smooth' });
+                          }
+                        }}
+                        className={`group relative w-full aspect-square rounded-xl bg-gradient-to-br ${rarityColors[badge.rarity]} flex items-center justify-center text-xl shadow-lg hover:shadow-xl transition-shadow`}
+                        title={`${badge.name} - ${badge.description}`}
+                      >
+                        {badge.icon}
+                      </motion.button>
+                    ))}
+                    {badges.length > 3 && (
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setActiveTab('badges');
+                          const element = document.querySelector('.tabs-section');
+                          if (element) {
+                            window.scrollTo({ top: (element as HTMLElement).offsetTop, behavior: 'smooth' });
+                          }
+                        }}
+                        className="w-full aspect-square rounded-xl bg-gray-700 flex items-center justify-center text-sm font-medium text-gray-300 hover:bg-gray-600 transition-colors"
+                      >
+                        +{badges.length - 3}
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Section des badges pour desktop */}
+                <div className="mt-6 hidden lg:block">
                   <div className="flex items-center gap-2 mb-3">
                     <h3 className="text-sm font-medium text-gray-400">Badges obtenus</h3>
                     <span className="text-xs text-purple-400">({badges.length})</span>
