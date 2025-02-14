@@ -679,6 +679,188 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Section Boutique et Points */}
+      <section className="py-20 bg-gradient-to-b from-black to-purple-900/20">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+              Gagnez des récompenses
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Chaque action compte ! Gagnez des points en jouant et échangez-les contre des récompenses exclusives.
+            </p>
+          </motion.div>
+
+          {/* Exemples de récompenses */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gray-900/50 rounded-2xl p-6 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-pink-600/30 rounded-xl flex items-center justify-center text-3xl">
+                  🛍️
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Bons d'achat</h3>
+                  <p className="text-gray-400">Amazon, Fnac, etc.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Bon 10€</span>
+                  <span className="font-bold text-purple-400">5000 pts</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Bon 20€</span>
+                  <span className="font-bold text-purple-400">9000 pts</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Bon 50€</span>
+                  <span className="font-bold text-purple-400">20000 pts</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-gray-900/50 rounded-2xl p-6 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-pink-600/30 rounded-xl flex items-center justify-center text-3xl">
+                  🍕
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Récompenses locales</h3>
+                  <p className="text-gray-400">Restaurants & activités</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Pizza offerte</span>
+                  <span className="font-bold text-purple-400">4000 pts</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Menu Burger</span>
+                  <span className="font-bold text-purple-400">3500 pts</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Place de ciné</span>
+                  <span className="font-bold text-purple-400">3000 pts</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-900/50 rounded-2xl p-6 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-pink-600/30 rounded-xl flex items-center justify-center text-3xl">
+                  🎮
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Bonus en jeu</h3>
+                  <p className="text-gray-400">Avantages exclusifs</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Skin exclusif</span>
+                  <span className="font-bold text-purple-400">2500 pts</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Double XP (1h)</span>
+                  <span className="font-bold text-purple-400">1500 pts</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-xl">
+                  <span>Pack VIP</span>
+                  <span className="font-bold text-purple-400">7500 pts</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Comment gagner des points */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="bg-gray-900/50 p-6 rounded-xl border border-purple-500/20"
+            >
+              <div className="text-3xl mb-4">🎯</div>
+              <h4 className="text-lg font-bold mb-2">Éliminations</h4>
+              <p className="text-gray-400">100 points par élimination</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-gray-900/50 p-6 rounded-xl border border-purple-500/20"
+            >
+              <div className="text-3xl mb-4">🏃</div>
+              <h4 className="text-lg font-bold mb-2">Évasion</h4>
+              <p className="text-gray-400">150 points par évasion réussie</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-900/50 p-6 rounded-xl border border-purple-500/20"
+            >
+              <div className="text-3xl mb-4">📺</div>
+              <h4 className="text-lg font-bold mb-2">Streaming</h4>
+              <p className="text-gray-400">10 points par minute de stream</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-gray-900/50 p-6 rounded-xl border border-purple-500/20"
+            >
+              <div className="text-3xl mb-4">⚡</div>
+              <h4 className="text-lg font-bold mb-2">Pouvoirs</h4>
+              <p className="text-gray-400">50 points par utilisation</p>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 shadow-lg hover:shadow-purple-500/50"
+            >
+              <span>Découvrir la boutique</span>
+              <span>→</span>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Section Le jeu en action */}
       <motion.section 
         initial={{ opacity: 0 }}
@@ -1224,7 +1406,7 @@ export default function Home() {
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="inline-block bg-white/10 backdrop-blur-xl px-12 py-8 rounded-2xl border border-white/20"
+              className="inline-block bg-white/10 backdrop-blur-xl px-12 py-8 rounded-2xl border border-purple-500/20"
             >
               <motion.p 
                 className="text-sm text-white/80 uppercase tracking-wide"
