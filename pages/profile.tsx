@@ -5,6 +5,7 @@ import Link from 'next/link';
 import GameRules from '../components/GameRules';
 import PlayerMessages from '../components/PlayerMessages';
 import GameLeaderboard from '../components/GameLeaderboard';
+import ShopButton from '../components/ShopButton';
 
 // Types pour les données du profil
 interface Badge {
@@ -487,6 +488,10 @@ export default function Profile() {
               <span>📜</span>
               Règles du jeu
             </button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <ShopButton />
           </div>
         </div>
 

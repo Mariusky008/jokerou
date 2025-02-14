@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import GameRules from '../components/GameRules';
 import { useAudio } from '../contexts/AudioContext';
+import ShopButton from '../components/ShopButton';
 
 interface Hunt {
   id: string;
@@ -20,6 +21,10 @@ interface Hunt {
   timeToStart?: number; // Temps restant en secondes
   isWaiting?: boolean; // Pour suivre si l'utilisateur est inscrit
   inviteLink: string;
+  customReward?: {
+    description: string;
+    value?: number;
+  };
 }
 
 interface Notification {
@@ -142,7 +147,11 @@ export default function Hunts() {
     date: '',
     time: '',
     maxParticipants: 12,
-    inviteLink: ''
+    inviteLink: '',
+    customReward: {
+      description: '',
+      value: 0
+    }
   });
 
   // Ajout d'un état pour suivre si le composant est monté
@@ -259,7 +268,8 @@ export default function Hunts() {
       },
       timeToStart: 0,
       isWaiting: false,
-      inviteLink
+      inviteLink,
+      customReward: newHunt.customReward
     };
 
     setHunts(prev => [...prev, hunt]);
@@ -268,7 +278,11 @@ export default function Hunts() {
       date: '',
       time: '',
       maxParticipants: 12,
-      inviteLink: inviteLink
+      inviteLink: inviteLink,
+      customReward: {
+        description: '',
+        value: 0
+      }
     });
     
     setNotification({
@@ -686,6 +700,7 @@ export default function Hunts() {
               <span>👤</span>
               Mon profil
             </Link>
+            <ShopButton />
             <button
               onClick={() => setShowCreateModal(true)}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
@@ -746,6 +761,10 @@ export default function Hunts() {
                   <span>👤</span>
                   Mon profil
                 </Link>
+
+                <div onClick={() => setShowMobileMenu(false)}>
+                  <ShopButton />
+                </div>
 
                 <button
                   onClick={() => {
@@ -820,6 +839,21 @@ export default function Hunts() {
                   </div>
                 </div>
               </div>
+
+              {hunt.customReward && hunt.customReward.description && (
+                <div className="mt-4 bg-purple-900/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-purple-300">
+                    <span>🎁</span>
+                    <span className="font-medium">Gain à remporter :</span>
+                  </div>
+                  <div className="mt-1 text-gray-300">{hunt.customReward.description}</div>
+                  {hunt.customReward.value > 0 && (
+                    <div className="text-sm text-purple-400 mt-1">
+                      Valeur estimée : {hunt.customReward.value}€
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
@@ -890,32 +924,50 @@ export default function Hunts() {
                 />
               </div>
 
-              {newHunt.inviteLink && (
-                <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-                  <label className="block text-gray-400 mb-2">
-                    Lien d'invitation
+              <div className="border-t border-gray-800 my-4 pt-4">
+                <h3 className="text-lg font-semibold mb-4">Gain personnalisé</h3>
+                
+                <div>
+                  <label className="block text-gray-400 mb-2" htmlFor="rewardDescription">
+                    Description du gain
                   </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={newHunt.inviteLink}
-                      readOnly
-                      className="flex-1 bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => copyInviteLink(newHunt.inviteLink)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                    >
-                      <span>📋</span>
-                      Copier
-                    </button>
-                  </div>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Partagez ce lien avec vos amis pour les inviter à rejoindre la chasse
-                  </p>
+                  <input
+                    type="text"
+                    id="rewardDescription"
+                    placeholder="Ex: Un dîner au restaurant, une sortie cinéma..."
+                    value={newHunt.customReward.description}
+                    onChange={(e) => setNewHunt({
+                      ...newHunt,
+                      customReward: {
+                        ...newHunt.customReward,
+                        description: e.target.value
+                      }
+                    })}
+                    className="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
                 </div>
-              )}
+
+                <div className="mt-4">
+                  <label className="block text-gray-400 mb-2" htmlFor="rewardValue">
+                    Valeur estimée (optionnel)
+                  </label>
+                  <input
+                    type="number"
+                    id="rewardValue"
+                    min="0"
+                    placeholder="Valeur en euros"
+                    value={newHunt.customReward.value || ''}
+                    onChange={(e) => setNewHunt({
+                      ...newHunt,
+                      customReward: {
+                        ...newHunt.customReward,
+                        value: parseInt(e.target.value) || 0
+                      }
+                    })}
+                    className="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
 
               <div className="flex justify-end gap-4 mt-6">
                 <button
@@ -927,7 +979,11 @@ export default function Hunts() {
                       date: '',
                       time: '',
                       maxParticipants: 12,
-                      inviteLink: ''
+                      inviteLink: '',
+                      customReward: {
+                        description: '',
+                        value: 0
+                      }
                     });
                   }}
                   className="px-4 py-2 text-gray-400 hover:text-white transition-colors"

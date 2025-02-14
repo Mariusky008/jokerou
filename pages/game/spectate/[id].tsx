@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAudio } from '../../../contexts/AudioContext';
+import ShopButton from '../../../components/ShopButton';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const Map = dynamic(
@@ -414,6 +415,16 @@ export default function SpectateGame() {
         </Head>
 
         <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <Link href="/hunts" className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2">
+              <span>←</span>
+              <span>Retour aux chasses</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <ShopButton />
+            </div>
+          </div>
+
           {/* Header avec timer et contrôles */}
           <div className="flex justify-between items-center mb-8">
             <Link href="/spectate" className="text-blue-500 hover:text-blue-400">

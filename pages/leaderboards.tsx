@@ -1,8 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
 import Link from 'next/link';
 import GameLeaderboard from '../components/GameLeaderboard';
+import dynamic from 'next/dynamic';
+
+// Composants client uniquement
+const Clock = dynamic(() => import('../components/Clock'), {
+  ssr: false,
+  loading: () => <div className="text-gray-400">--:--:--</div>
+});
+
+const GameDate = dynamic(() => import('../components/GameDate'), {
+  ssr: false,
+  loading: () => (
+    <div>
+      <div className="h-6 w-32 bg-gray-800 rounded animate-pulse mb-1"></div>
+      <div className="h-4 w-48 bg-gray-800 rounded animate-pulse"></div>
+    </div>
+  )
+});
 
 interface GameHistory {
   id: string;
@@ -26,7 +43,6 @@ interface GameHistory {
 }
 
 export default function Leaderboards() {
-  // Simulation de l'historique des parties (à remplacer par des données réelles)
   const [gameHistory] = useState<GameHistory[]>([
     {
       id: 'game-1',
@@ -269,6 +285,7 @@ export default function Leaderboards() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
             Historique des parties
           </h1>
+          <Clock />
           <Link
             href="/game"
             className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full transition-colors"
@@ -324,12 +341,7 @@ export default function Leaderboards() {
               >
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="font-bold text-lg">
-                      Partie du {new Date(game.date).toLocaleDateString()}
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      {new Date(game.date).toLocaleTimeString()} - Durée: {Math.floor(game.duration / 60)}min
-                    </p>
+                    <GameDate date={game.date} duration={game.duration} />
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-medium text-purple-400">

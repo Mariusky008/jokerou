@@ -243,6 +243,8 @@ export default function Home() {
   const [showRules, setShowRules] = useState(false);
   const [showSafetyZone, setShowSafetyZone] = useState(false);
   const [playerPositions, setPlayerPositions] = useState(initialPlayers);
+  const [particles, setParticles] = useState([]);
+  const [isClient, setIsClient] = useState(false);
 
   const features = [
     {
@@ -341,6 +343,16 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    setIsClient(true);
+    // Générer les positions des particules uniquement côté client
+    const newParticles = [...Array(20)].map(() => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100
+    }));
+    setParticles(newParticles);
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
       <Head children={<>
@@ -360,12 +372,13 @@ export default function Home() {
         <div className="absolute inset-0">
           <Image
             src="/images/portrait.png"
-            alt="Grim Background"
+            alt="Portrait du Grim"
             fill
             priority
             quality={100}
             className="opacity-85 brightness-125 object-cover object-center"
             sizes="100vw"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-black/95 to-pink-900/90">
             {/* Motif de grille représentant les rues */}
@@ -622,7 +635,8 @@ export default function Home() {
               <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
                 <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">2</div>
                 <h3 className="text-xl font-bold mb-4 mt-4">Choisissez votre partie</h3>
-                <p className="text-gray-400">Consultez les créneaux disponibles dans votre ville et rejoignez une partie. Découvrez votre rôle mystère : serez-vous le GRIM ou l'un des Chasseurs ?</p>
+                <p className="text-gray-400">Consultez les créneaux disponibles dans votre ville et rejoignez une partie ou créez en une. 
+                  Découvrez votre rôle mystère : serez-vous le GRIM ou l'un des Chasseurs ?</p>
               </div>
             </motion.div>
 
@@ -676,6 +690,250 @@ export default function Home() {
               Règles du jeu
             </motion.button>
           </div>
+        </div>
+      </section>
+
+      {/* Section Pourquoi nous rejoindre */}
+      <section className="py-20 bg-gradient-to-b from-black to-purple-900/20 relative overflow-hidden">
+        {/* Particules d'arrière-plan animées */}
+        <div className="absolute inset-0">
+          {isClient && particles.map((particle, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-purple-500/20"
+              initial={{
+                x: `${particle.x}%`,
+                y: `${particle.y}%`,
+                scale: 0
+              }}
+              animate={{
+                x: [null, `${Math.random() * 100}%`],
+                y: [null, `${Math.random() * 100}%`],
+                scale: [0, 1.5, 0]
+              }}
+              transition={{
+                duration: Math.random() * 5 + 5,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="container mx-auto px-4 relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 relative"
+          >
+            {/* Effet de lumière derrière le titre */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
+            
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent relative">
+              Pourquoi nous rejoindre ?
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Une expérience unique qui combine jeu, récompenses et rencontres réelles. Créez vos propres traques privées avec famille ou amis et définissez vos récompenses personnalisées !
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Carte Adrénaline */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10 }}
+              className="bg-gray-900/50 rounded-2xl p-8 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group relative"
+            >
+              {/* Effet de brillance au survol */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-purple-600/10 to-purple-600/0 opacity-0 group-hover:opacity-100 transform -skew-x-12 transition-all duration-700" />
+              
+              <motion.div
+                className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-pink-600/30 rounded-xl flex items-center justify-center text-3xl mb-6 relative"
+                whileHover={{ scale: 1.2, rotate: 360 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              >
+                🎯
+                {/* Effet de pulse */}
+                <div className="absolute inset-0 rounded-xl bg-purple-500/20 animate-ping" />
+              </motion.div>
+              
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                Montée d'adrénaline garantie
+              </h3>
+              <ul className="space-y-4 text-gray-300">
+                <motion.li
+                  className="flex items-start gap-3"
+                  whileHover={{ x: 5 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 10 }}
+                >
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Traquez ou échappez-vous dans les rues de votre ville</span>
+                </motion.li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Utilisez des pouvoirs uniques pour déjouer vos adversaires</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Formez des alliances secrètes et trahissez au bon moment</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Vivez des parties intenses avec des rebondissements constants</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            {/* Carte Récompenses */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-900/50 rounded-2xl p-8 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group relative"
+            >
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-pink-600/30 rounded-xl flex items-center justify-center text-3xl mb-6 relative">
+                🎁
+                {/* Effet de pulse */}
+                <div className="absolute inset-0 rounded-xl bg-purple-500/20 animate-ping" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                Des récompenses concrètes
+              </h3>
+              <ul className="space-y-4 text-gray-300">
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Gagnez des points à chaque action : éliminations, évasions, streaming</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Échangez vos points contre des bons d'achat (Amazon, Fnac...)</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Profitez de récompenses locales : restaurants, cinéma, activités</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Débloquez des avantages exclusifs en jeu</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            {/* Carte Rencontres */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10 }}
+              transition={{ delay: 0.4 }}
+              className="bg-gray-900/50 rounded-2xl p-8 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group relative"
+            >
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-pink-600/30 rounded-xl flex items-center justify-center text-3xl mb-6 relative">
+                🤝
+                {/* Effet de pulse */}
+                <div className="absolute inset-0 rounded-xl bg-purple-500/20 animate-ping" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                Du virtuel au réel
+              </h3>
+              <ul className="space-y-4 text-gray-300">
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Rencontrez vos adversaires après chaque partie</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>5 minutes de débriefing dans un lieu révélé par le Grim</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Partagez vos stratégies et moments forts</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Créez des liens avec la communauté locale de joueurs</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            <motion.div
+             initial={{ opacity: 0, x: 50 }}
+             whileInView={{ opacity: 1, x: 0 }}
+             viewport={{ once: true }}
+             whileHover={{ y: -10 }}
+             transition={{ delay: 0.4 }}
+             className="bg-purple-900/50 rounded-2xl p-8 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group relative">
+             <div className="w-16 h-16 bg-gradient-to-br from-purple-600/30 to-pink-600/30 rounded-xl flex items-center justify-center text-3xl mb-6 relative">
+             👥
+                {/* Effet de pulse */}
+                <div className="absolute inset-0 rounded-xl bg-purple-500/20 animate-ping" />
+                </div>
+              <h3  className="text-xl font-bold mb-2">Parties publiques ou privées </h3>
+              <ul className="space-y-4 text-gray-300">
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Participez à une traque dans votre ville</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Ou créez une partie personnalisée avec famille ou amis</span>
+                  </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Définissez vos propres règles et choisissez une récompense excitante pour le vainqueur (argent, gages, repas...) !</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-purple-400 mt-1">•</span>
+                  <span>Créez des liens avec la communauté locale de joueurs</span>
+                </li>
+              </ul>
+              
+            </motion.div>
+
+            
+            
+          </div>
+
+          {/* Bouton d'appel à l'action */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <Link
+              href="/auth"
+              className="group relative inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-full font-bold transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-lg overflow-hidden"
+            >
+              {/* Effet de particules au survol */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-1 h-1 bg-white rounded-full"
+                    initial={{ scale: 0 }}
+                    animate={{
+                      scale: [0, 1.5, 0],
+                      x: [0, (i - 2) * 30],
+                      y: [0, (Math.random() - 0.5) * 20]
+                    }}
+                    transition={{
+                      duration: 0.6,
+                      repeat: Infinity,
+                      delay: i * 0.1
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="relative z-10">Rejoignez l'aventure</span>
+              <span className="relative z-10 transform group-hover:translate-x-1 transition-transform">→</span>
+            </Link>
+          </motion.div>
         </div>
       </section>
 
@@ -1428,6 +1686,101 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Section Parties Privées */}
+      <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+              Créez votre propre traque privée
+            </h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              Organisez des parties exclusives avec vos amis et votre famille. Définissez vos règles, choisissez un gain pour le vainqueur et créez une expérience unique.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="bg-gray-800 rounded-xl p-6 shadow-xl border border-purple-500/20"
+            >
+              <div className="text-3xl mb-4">👥</div>
+              <h3 className="text-xl font-bold mb-2">Entre amis</h3>
+              <p className="text-gray-400">
+                Invitez jusqu'à 20 amis pour une partie privée. Définissez un gain motivant pour pimenter la compétition !
+              </p>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="bg-gray-800 rounded-xl p-6 shadow-xl border border-purple-500/20"
+            >
+              <div className="text-3xl mb-4">👨‍👩‍👧‍👦</div>
+              <h3 className="text-xl font-bold mb-2">En famille</h3>
+              <p className="text-gray-400">
+                Créez des parties adaptées à tous les âges. Une activité ludique et sécurisée pour toute la famille.
+              </p>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="bg-gray-800 rounded-xl p-6 shadow-xl border border-purple-500/20"
+            >
+              <div className="text-3xl mb-4">🎁</div>
+              <h3 className="text-xl font-bold mb-2">Gain personnalisé</h3>
+              <p className="text-gray-400">
+                Définissez un gain pour le vainqueur : argent, gage, repas... Rendez la partie encore plus excitante !
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Section des gains personnalisés */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-2xl p-8 mb-12 border border-purple-500/20"
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-purple-600/30 rounded-xl flex items-center justify-center text-2xl">
+                🎁
+              </div>
+              <h3 className="text-2xl font-bold">Gains personnalisés</h3>
+            </div>
+            <p className="text-gray-300 mb-6">
+              Rendez vos parties encore plus excitantes en définissant un gain pour le vainqueur. Quelques idées :
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="bg-purple-900/20 p-3 rounded-lg">
+                <span className="text-purple-400">🍽️</span> Un dîner au restaurant
+              </div>
+              <div className="bg-purple-900/20 p-3 rounded-lg">
+                <span className="text-purple-400">🎬</span> Une sortie cinéma
+              </div>
+              <div className="bg-purple-900/20 p-3 rounded-lg">
+                <span className="text-purple-400">🎮</span> Un jeu vidéo
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 rounded-2xl p-8 max-w-3xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <h3 className="text-2xl font-bold mb-2">Prêt à organiser votre traque ?</h3>
+                <p className="text-gray-400">
+                  Créez votre partie privée en quelques clics et invitez vos proches.
+                </p>
+              </div>
+              <Link
+                href="/hunts"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-purple-500/50 transition-all duration-300 whitespace-nowrap"
+              >
+                Créer une partie privée
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Nouvelle section : Modes de jeu */}
       <section className="py-20 bg-gradient-to-b from-purple-900/20 to-black">
         <div className="container mx-auto px-4">
@@ -1598,111 +1951,158 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer avec mentions légales */}
-      <footer className="py-16 bg-gradient-to-b from-black to-purple-900/20">
+      {/* Footer */}
+      <footer className="bg-black py-20 border-t border-gray-800">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-3 gap-12">
-              {/* Section Légal */}
-              <div className="text-center">
-                <h4 className="text-xl font-semibold mb-6 text-purple-400">Légal</h4>
-                <ul className="space-y-3 text-sm text-gray-400">
-                  <li>
-                    <Link href="/legal/mentions-legales" className="hover:text-purple-400 transition-colors">
-                      Mentions légales
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Informations légales sur l'entreprise et le service</p>
-                  </li>
-                  <li>
-                    <Link href="/legal/conditions-utilisation" className="hover:text-purple-400 transition-colors">
-                      Conditions d'utilisation
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Règles et conditions d'utilisation du service</p>
-                  </li>
-                  <li>
-                    <Link href="/legal/politique-confidentialite" className="hover:text-purple-400 transition-colors">
-                      Politique de confidentialité
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Gestion et protection de vos données personnelles</p>
-                  </li>
-                  <li>
-                    <Link href="/legal/rgpd" className="hover:text-purple-400 transition-colors">
-                      RGPD
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Conformité avec le Règlement Général sur la Protection des Données</p>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Section Sécurité */}
-              <div className="text-center">
-                <h4 className="text-xl font-semibold mb-6 text-purple-400">Sécurité</h4>
-                <ul className="space-y-3 text-sm text-gray-400">
-                  <li>
-                    <Link href="/security/regles-securite" className="hover:text-purple-400 transition-colors">
-                      Règles de sécurité
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Consignes pour jouer en toute sécurité</p>
-                  </li>
-                  <li>
-                    <Link href="/security/charte-joueur" className="hover:text-purple-400 transition-colors">
-                      Charte du joueur
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Code de conduite et valeurs de notre communauté</p>
-                  </li>
-                  <li>
-                    <Link href="/security/signaler-probleme" className="hover:text-purple-400 transition-colors">
-                      Signaler un problème
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Procédure de signalement d'incidents</p>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Section Contact */}
-              <div className="text-center">
-                <h4 className="text-xl font-semibold mb-6 text-purple-400">Contact</h4>
-                <ul className="space-y-3 text-sm text-gray-400">
-                  <li>
-                    <Link href="/support" className="hover:text-purple-400 transition-colors">
-                      Contact
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Notre équipe vous répond sous 24h</p>
-                  </li>
-                  <li>
-                    <a href="mailto:contact@grim.com" className="hover:text-purple-400 transition-colors">
-                      contact@grim.com
-                    </a>
-                    <p className="text-xs text-gray-500 mt-1">Notre équipe vous répond sous 24h</p>
-                  </li>
-                  <li>
-                    <Link href="/support/faq" className="hover:text-purple-400 transition-colors">
-                      FAQ
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Réponses aux questions fréquentes</p>
-                  </li>
-                  <li>
-                    <Link href="/support" className="hover:text-purple-400 transition-colors">
-                      Support
-                    </Link>
-                    <p className="text-xs text-gray-500 mt-1">Assistance technique et aide en jeu</p>
-                  </li>
-                </ul>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            {/* Section Légal */}
+            <div>
+              <h3 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                Légal
+              </h3>
+              <ul className="space-y-4">
+                <li>
+                  <Link href="/legal/mentions-legales" className="text-gray-400 hover:text-purple-400 transition-colors">
+                    Mentions légales
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/conditions-utilisation" className="text-gray-400 hover:text-purple-400 transition-colors">
+                    Conditions d'utilisation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/politique-confidentialite" className="text-gray-400 hover:text-purple-400 transition-colors">
+                    Politique de confidentialité
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/rgpd" className="text-gray-400 hover:text-purple-400 transition-colors">
+                    RGPD
+                  </Link>
+                </li>
+              </ul>
             </div>
 
-            {/* Copyright et RGPD */}
-            <div className="mt-12 pt-8 border-t border-purple-500/20 text-center">
-              <p className="text-sm text-gray-400 mb-2">
-                © {new Date().getFullYear()} Grim. Tous droits réservés.
-              </p>
-              <p className="text-xs text-gray-500">
-                Grim s'engage à protéger vos données personnelles conformément au RGPD.
-                <Link href="/legal/politique-confidentialite" className="text-purple-400 hover:text-purple-300 ml-2">
-                  En savoir plus sur nos cookies
-                </Link>
-              </p>
+            {/* Section Sécurité */}
+            <div>
+              <h3 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                Sécurité
+              </h3>
+              <ul className="space-y-4">
+                <li>
+                  <Link href="/security/regles-securite" className="text-gray-400 hover:text-purple-400 transition-colors">
+                    Règles de sécurité
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/security/charte-joueur" className="text-gray-400 hover:text-purple-400 transition-colors">
+                    Charte du joueur
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/security/signaler-probleme" className="text-gray-400 hover:text-purple-400 transition-colors">
+                    Signaler un problème
+                  </Link>
+                </li>
+              </ul>
             </div>
+
+            {/* Section Contact */}
+            <div>
+              <h3 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                Contact
+              </h3>
+              <ul className="space-y-4">
+                <li className="text-gray-400">
+                  <span className="text-purple-400">Email :</span> contact@grim.com
+                </li>
+                <li className="text-gray-400">
+                  <span className="text-purple-400">Support :</span> +33 7 68 23 33 47
+                </li>
+                <li className="text-gray-400">
+                  <span className="text-purple-400">Adresse :</span> 7 rue saint Pierre, 40100 Dax
+                </li>
+              </ul>
+            </div>
+
+            {/* Section Réseaux sociaux */}
+            <div>
+              <h3 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                Suivez-nous
+              </h3>
+              <div className="flex flex-col space-y-4">
+                <a 
+                  href="https://twitter.com/GrimGame" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-400 hover:text-purple-400 transition-colors flex items-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-purple-500/20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                    </svg>
+                  </div>
+                  <span>@GrimGame</span>
+                </a>
+                <a 
+                  href="https://instagram.com/grim.game" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-400 hover:text-purple-400 transition-colors flex items-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-purple-500/20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span>@grim.game</span>
+                </a>
+                <a 
+                  href="https://discord.gg/grimgame" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-400 hover:text-purple-400 transition-colors flex items-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-purple-500/20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0 12.36 12.36 0 0 0-.617-1.23A.077.077 0 0 0 8.562 3c-1.714.29-3.354.8-4.885 1.491a.07.07 0 0 0-.032.027C.533 9.093-.32 13.555.099 17.961a.08.08 0 0 0 .031.055 20.03 20.03 0 0 0 5.993 2.98.078.078 0 0 0 .084-.026c.462-.62.874-1.275 1.226-1.963.021-.04.001-.088-.041-.104a13.201 13.201 0 0 1-1.872-.878.075.075 0 0 1-.008-.125c.126-.093.252-.19.372-.287a.075.075 0 0 1 .078-.01c3.927 1.764 8.18 1.764 12.061 0a.075.075 0 0 1 .079.009c.12.098.245.195.372.288a.075.075 0 0 1-.006.125c-.598.344-1.22.635-1.873.877a.075.075 0 0 0-.041.105c.36.687.772 1.341 1.225 1.962a.077.077 0 0 0 .084.028 19.963 19.963 0 0 0 6.002-2.981.076.076 0 0 0 .032-.054c.5-5.094-.838-9.52-3.549-13.442a.06.06 0 0 0-.031-.028zM8.02 15.278c-1.182 0-2.157-1.069-2.157-2.38 0-1.312.956-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.956 2.38-2.157 2.38zm7.975 0c-1.183 0-2.157-1.069-2.157-2.38 0-1.312.955-2.38 2.157-2.38 1.21 0 2.176 1.077 2.157 2.38 0 1.312-.946 2.38-2.157 2.38z"/>
+                    </svg>
+                  </div>
+                  <span>Discord Grim</span>
+                </a>
+                <a 
+                  href="https://youtube.com/@GrimGameOfficiel" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-400 hover:text-purple-400 transition-colors flex items-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-purple-500/20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path fillRule="evenodd" d="M19.812 5.418c.861.23 1.538.907 1.768 1.768C21.998 8.746 22 12 22 12s0 3.255-.418 4.814a2.504 2.504 0 0 1-1.768 1.768c-1.56.419-7.814.419-7.814.419s-6.255 0-7.814-.419a2.505 2.505 0 0 1-1.768-1.768C2 15.255 2 12 2 12s0-3.255.417-4.814a2.507 2.507 0 0 1 1.768-1.768C5.744 5 11.998 5 11.998 5s6.255 0 7.814.418ZM15.194 12 10 15V9l5.194 3Z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span>Grim Officiel</span>
+                </a>
+                <a 
+                  href="https://tiktok.com/@grim.game" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-400 hover:text-purple-400 transition-colors flex items-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-purple-500/20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                    </svg>
+                  </div>
+                  <span>@grim.game</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
+            <p>&copy; 2024 GRIM. Tous droits réservés.</p>
           </div>
         </div>
       </footer>
