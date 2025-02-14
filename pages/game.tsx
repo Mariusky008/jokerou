@@ -6,9 +6,8 @@ import TalkieWalkie from '../components/TalkieWalkie';
 import Link from 'next/link';
 import EventEffects from '../components/EventEffects';
 import { useAudio } from '../contexts/AudioContext';
-import GameLeaderboard from '../components/GameLeaderboard';
 import { gameService } from '../services/gameService';
-import { PlayerAction } from '../utils/pointsCalculator';
+import { calculatePoints } from '../utils/pointsCalculator';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const Map = dynamic(
@@ -129,6 +128,12 @@ interface PossibleEvent {
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   icon: string;
   isActive: boolean;
+}
+
+interface PlayerAction {
+  type: 'stream' | 'kill' | 'escape' | 'power' | 'distance';
+  value?: number;
+  duration?: number;
 }
 
 export default function Game() {
@@ -686,44 +691,28 @@ export default function Game() {
   };
 
   const usePower = async (powerId: string) => {
-    setPowers((prev) =>
-      prev.map((power) => {
-        if (power.id === powerId && power.remainingUses > 0 && power.cooldown === 0) {
-          // Enregistrer l'action et les points
-          const action: PlayerAction = {
-            type: 'power_use',
-            value: 1,
-            details: {
-              powerType: power.id
-            }
-          };
-          
-          gameService.recordPlayerAction(currentPlayer.id, action)
-            .then(points => {
-              // Mettre à jour les points du joueur
-              setCurrentPlayer(prev => ({
-                ...prev,
-                points: prev.points + points,
-                achievements: {
-                  ...prev.achievements,
-                  powerUses: (prev.achievements?.powerUses || 0) + 1
-                }
-              }));
-            });
+    try {
+      if (!currentPlayer) return;
 
-          // Jouer le son d'activation du pouvoir
-          if (typeof window !== 'undefined' && (window as any).playPowerSound) {
-            (window as any).playPowerSound('activation');
+      const action: PlayerAction = {
+        type: 'power',
+        value: 1
+      };
+
+      const points = await gameService.recordPlayerAction(currentPlayer.id, action);
+      if (points) {
+        setCurrentPlayer(prev => ({
+          ...prev,
+          points: prev.points + points,
+          achievements: {
+            ...prev.achievements,
+            powerUses: (prev.achievements?.powerUses || 0) + 1
           }
-          return {
-            ...power,
-            remainingUses: power.remainingUses - 1,
-            cooldown: powerId === 'ghost' ? 30 : 15
-          };
-        }
-        return power;
-      })
-    );
+        }));
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'utilisation du pouvoir:', error);
+    }
   };
 
   const handleSendGlobalMessage = (e: React.FormEvent) => {
@@ -856,40 +845,14 @@ export default function Game() {
           // Enregistrer l'action de streaming
           const action: PlayerAction = {
             type: 'stream',
-            details: {
-              streamDuration: newDuration
-            }
+            value: newDuration
           };
           
-          gameService.recordPlayerAction(currentPlayer.id, action)
-            .then(points => {
-              setStreamPoints(prev => prev + points);
-              setCurrentPlayer(prev => ({
-                ...prev,
-                points: prev.points + points,
-                achievements: {
-                  ...prev.achievements,
-                  streamMinutes: Math.floor(newDuration)
-                }
-              }));
-
-              // Vérifier les récompenses de streaming
-              streamRewards.forEach(reward => {
-                if (!reward.achieved && newDuration >= reward.duration) {
-                  setMessages(prev => [...prev, {
-                    id: Date.now().toString(),
-                    author: 'Système',
-                    content: `🎉 Récompense de streaming : +${points} points pour ${reward.duration} minutes de direct !`,
-                    timestamp: new Date()
-                  }]);
-                  reward.achieved = true;
-                }
-              });
-            });
+          handleStreamPoints(action);
           
           return newDuration;
         });
-      }, 60000); // Vérifier toutes les minutes
+      }, 60000);
     }
     return () => clearInterval(interval);
   }, [isStreaming, currentPlayer.id]);
@@ -926,6 +889,22 @@ export default function Game() {
     }
   }, [isStreaming]);
 
+  const handleStreamPoints = async (action: PlayerAction) => {
+    try {
+      const points = await gameService.recordPlayerAction(currentPlayer.id, action);
+      if (points) {
+        const calculatedPoints = calculatePoints(action);
+        setStreamPoints(prev => prev + calculatedPoints);
+        setCurrentPlayer(prev => ({
+          ...prev,
+          points: prev.points + calculatedPoints
+        }));
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement des points de stream:', error);
+    }
+  };
+
   useEffect(() => {
     // Simuler le mouvement des joueurs
     const interval = setInterval(() => {
@@ -942,40 +921,53 @@ export default function Game() {
   }, []);
 
   const recordDistance = async (distance: number) => {
-    const action: PlayerAction = {
-      type: 'distance',
-      value: distance
-    };
+    try {
+      const action: PlayerAction = {
+        type: 'distance',
+        value: distance
+      };
 
-    const points = await gameService.recordPlayerAction(currentPlayer.id, action);
-    setCurrentPlayer(prev => ({
-      ...prev,
-      points: prev.points + points,
-      achievements: {
-        ...prev.achievements,
-        distance: (prev.achievements?.distance || 0) + distance
+      const points = await gameService.recordPlayerAction(currentPlayer.id, action);
+      if (points) {
+        setCurrentPlayer(prev => ({
+          ...prev,
+          points: prev.points + points,
+          achievements: {
+            ...prev.achievements,
+            distance: (prev.achievements?.distance || 0) + distance
+          }
+        }));
       }
-    }));
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement de la distance:', error);
+    }
   };
 
   useEffect(() => {
     const initGame = async () => {
-      const initialPlayers = [currentPlayer, ...players].map(player => ({
-        id: player.id,
-        position: player.position
-      }));
+      try {
+        const initialPlayers = [currentPlayer, ...players];
+        setPlayers(initialPlayers);
 
-      await gameService.startGame(initialPlayers, [48.8566, 2.3522]);
+        // Démarrer la partie avec la position initiale
+        await gameService.startGame([48.8566, 2.3522]);
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de la partie:', error);
+      }
     };
 
     initGame();
 
     return () => {
       // Terminer la partie si le composant est démonté
-      if (currentPlayer.role === 'grim') {
-        gameService.endGame('grim');
-      } else {
-        gameService.endGame('hunters');
+      try {
+        if (currentPlayer.role === 'grim') {
+          gameService.endGame();
+        } else {
+          gameService.endGame();
+        }
+      } catch (error) {
+        console.error('Erreur lors de la fin de la partie:', error);
       }
     };
   }, []);
@@ -1341,6 +1333,40 @@ export default function Game() {
 
           {/* Sidebar avec le chat et les infos joueurs */}
           <div className="space-y-8">
+            {/* Classement rapide */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gray-900 rounded-2xl p-4"
+            >
+              <h2 className="text-lg font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                Classement rapide
+              </h2>
+              <div className="space-y-2">
+                {[currentPlayer, ...players]
+                  .sort((a, b) => (b.points || 0) - (a.points || 0))
+                  .slice(0, 3)
+                  .map((player, index) => (
+                    <motion.div
+                      key={player.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-gray-800/50 rounded-lg p-2 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 font-medium">#{index + 1}</span>
+                        <span>{player.avatar}</span>
+                        <span className="font-medium">{player.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold">{player.points} pts</div>
+                      </div>
+                    </motion.div>
+                  ))}
+              </div>
+            </motion.div>
+
             {/* Infos du joueur sélectionné */}
             {selectedPlayer && (
               <motion.div
@@ -1443,14 +1469,6 @@ export default function Game() {
         onMessageStart={handleMessageStart}
         onMessageEnd={handleMessageEnd}
       />
-
-      <div className="mt-8">
-        <GameLeaderboard 
-          players={[currentPlayer, ...players]}
-          gameId={`game-${Date.now()}`}
-          gameDate={new Date()}
-        />
-      </div>
 
       <style jsx global>{`
         .shadow-neon {

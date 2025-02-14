@@ -27,9 +27,9 @@ interface Player {
   role: 'grim' | 'hunter' | 'illusionist' | 'informer' | 'saboteur';
   isReady: boolean;
   level: number;
-  health: number;
-  stamina: number;
-  powerCooldown: number;
+  health?: number;
+  stamina?: number;
+  powerCooldown?: number;
   lastAction?: string;
   killCount?: number;
   distanceTraveled?: number;
@@ -466,25 +466,6 @@ export default function SpectateGame() {
                 </div>
               </div>
 
-              {/* Statistiques de la partie */}
-              <div className="bg-gray-900 rounded-2xl p-6">
-                <h2 className="text-xl font-bold mb-4">Statistiques</h2>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Évasions du Grim</span>
-                    <span className="font-bold">{gameStats.grimEscapes}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Captures des chasseurs</span>
-                    <span className="font-bold">{gameStats.hunterKills}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Pouvoirs utilisés</span>
-                    <span className="font-bold">{gameStats.powerUsed}</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Talkie-Walkie (Desktop) */}
               <div className="hidden lg:block bg-gray-900 rounded-2xl p-6">
                 <h3 className="text-lg font-bold mb-4">Contrôles audio</h3>
@@ -759,6 +740,55 @@ export default function SpectateGame() {
                   )}
                 </div>
               )}
+
+              {/* Classement rapide */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-gray-900 rounded-2xl p-4"
+              >
+                <h2 className="text-lg font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
+                  Classement rapide
+                </h2>
+                <div className="space-y-2">
+                  {players
+                    .sort((a, b) => ((b.streamPoints || 0) + (b.killCount || 0) * 100) - ((a.streamPoints || 0) + (a.killCount || 0) * 100))
+                    .slice(0, 3)
+                    .map((player, index) => (
+                      <motion.div
+                        key={player.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-gray-800/50 rounded-lg p-2 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400 font-medium">#{index + 1}</span>
+                          <span>{player.avatar}</span>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{player.name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              player.role === 'grim' ? 'bg-purple-500/20 text-purple-400' :
+                              player.role === 'hunter' ? 'bg-red-500/20 text-red-400' :
+                              player.role === 'informer' ? 'bg-blue-500/20 text-blue-400' :
+                              'bg-green-500/20 text-green-400'
+                            }`}>
+                              {player.role}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold">{(player.streamPoints || 0) + (player.killCount || 0) * 100} pts</div>
+                          {player.isStreaming && (
+                            <span className="text-xs text-red-400 flex items-center gap-1">
+                              <span className="animate-pulse">●</span> En direct
+                            </span>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                </div>
+              </motion.div>
             </div>
 
             {/* Colonne de droite - Communications et événements */}

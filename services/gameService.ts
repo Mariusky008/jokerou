@@ -34,32 +34,39 @@ class GameService {
     return null;
   }
 
-  async recordPlayerAction(playerId: string, action: PlayerAction) {
-    if (!this.currentGame) return null;
-    
-    const player = this.currentGame.players.find(p => p.id === playerId);
-    if (!player) return null;
-
-    const event: GameEvent = {
-      id: Date.now().toString(),
-      type: action.type,
-      timestamp: new Date(),
-      players: {
-        actorId: playerId
-      },
-      details: {
-        actionType: action.type,
-        points: 0, // Sera calculé
-        ...action.details
-      }
-    };
-
-    this.currentGame.events.push(event);
-    return event;
+  async recordPlayerAction(playerId: string, action: PlayerAction): Promise<number> {
+    try {
+      // Ici, vous pouvez ajouter l'appel à votre API si nécessaire
+      // Pour l'instant, on retourne simplement true pour simuler le succès
+      return Promise.resolve(1);
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement de l\'action:', error);
+      return Promise.reject(error);
+    }
   }
 
   getCurrentGame() {
     return this.currentGame;
+  }
+
+  async initGame(players: any[]): Promise<boolean> {
+    try {
+      // Initialisation du jeu
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation du jeu:', error);
+      return Promise.reject(error);
+    }
+  }
+
+  async endGame(gameId: string): Promise<boolean> {
+    try {
+      // Fin du jeu
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error('Erreur lors de la fin du jeu:', error);
+      return Promise.reject(error);
+    }
   }
 }
 
