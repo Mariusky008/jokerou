@@ -40,34 +40,29 @@ const Particle = ({ color, x, y }: ParticleProps) => (
 );
 
 const ChallengeNotification = ({ onClose }: { onClose: () => void }) => (
-  <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 10000 }}>
-    <div className="relative bg-black/20 backdrop-blur-sm p-8 rounded-xl">
-      <div className="flex flex-col items-center gap-4">
-        <motion.div 
-          className="text-4xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-4 rounded-lg shadow-lg"
-          animate={{
-            scale: [1, 1.02, 1],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          Nouveau Défi !
-        </motion.div>
-        <div className="text-xl text-white bg-gray-800/80 px-6 py-3 rounded-lg">
-          Atteignez la zone marquée en moins de 2 minutes !
+  <motion.div
+    initial={{ opacity: 0, y: -100 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -100 }}
+    className="fixed top-4 left-1/2 -translate-x-1/2"
+    style={{ zIndex: 10000 }}
+  >
+    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-lg px-8 py-4">
+      <div className="flex items-center gap-4">
+        <span className="text-2xl">🏃</span>
+        <div>
+          <div className="font-bold text-white text-xl">Sprint mystique</div>
+          <div className="text-white/90">Atteignez la zone marquée pour obtenir un bonus de vitesse !</div>
         </div>
       </div>
       <button 
         onClick={onClose}
-        className="absolute -top-4 -right-4 w-8 h-8 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+        className="absolute top-1/2 -right-2 transform -translate-y-1/2 w-6 h-6 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center text-sm transition-colors"
       >
         ✕
       </button>
     </div>
-  </div>
+  </motion.div>
 );
 
 export default function EventEffects({ 

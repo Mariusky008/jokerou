@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
@@ -8,7 +8,7 @@ import { useAudio } from '../../../contexts/AudioContext';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const Map = dynamic(
-  () => import('../../../components/Map').then((mod) => mod.default),
+  () => import('../../../components/Map').then(mod => mod.default),
   { 
     loading: () => (
       <div className="h-[600px] bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
@@ -33,6 +33,9 @@ interface Player {
   lastAction?: string;
   killCount?: number;
   distanceTraveled?: number;
+  isStreaming?: boolean;
+  streamDuration?: number;
+  streamPoints?: number;
 }
 
 interface Message {
@@ -65,18 +68,23 @@ interface GameStats {
 
 interface TalkieMessage {
   id: string;
-  playerId: string;
   playerName: string;
   playerRole: string;
-  timestamp: Date;
-  duration: number;
   isPlaying: boolean;
+  timestamp: Date;
+}
+
+interface StreamReward {
+  duration: number; // en minutes
+  points: number;
+  achieved: boolean;
 }
 
 export default function SpectateGame() {
   const router = useRouter();
   const { id } = router.query;
   const { toggleMusic, isMusicPlaying, audioVolume, adjustVolume } = useAudio();
+  const mapRef = useRef(null);
 
   const [timeLeft, setTimeLeft] = useState(3600);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -92,114 +100,62 @@ export default function SpectateGame() {
       health: 100,
       stamina: 100,
       powerCooldown: 0,
-      killCount: 0,
-      distanceTraveled: 0,
-      lastAction: "S'est caché dans l'ombre"
+      lastAction: "S'est caché dans l'ombre",
+      isStreaming: true,
+      streamDuration: 15,
+      streamPoints: 150
     },
     {
       id: 'hunter1',
-      name: 'Alex',
+      name: 'Thomas',
       avatar: '🎯',
       position: [48.8570, 2.3525],
       role: 'hunter',
       isReady: true,
-      level: 8,
-      health: 100,
-      stamina: 100,
+      level: 10,
+      health: 95,
+      stamina: 80,
       powerCooldown: 0,
-      killCount: 2,
-      distanceTraveled: 1.2,
-      lastAction: "A activé son radar"
+      killCount: 1,
+      distanceTraveled: 1.0,
+      lastAction: "Coordonne l'équipe",
+      isStreaming: true,
+      streamDuration: 25,
+      streamPoints: 250
     },
     {
-      id: 'hunter2',
-      name: 'Marie',
-      avatar: '🎯',
-      position: [48.8562, 2.3518],
-      role: 'hunter',
+      id: 'informer1',
+      name: 'Sophie',
+      avatar: '🔍',
+      position: [48.8568, 2.3520],
+      role: 'informer',
       isReady: true,
       level: 12,
       health: 100,
       stamina: 90,
       powerCooldown: 30,
-      killCount: 1,
-      distanceTraveled: 0.8,
-      lastAction: "A placé un piège"
-    },
-    {
-      id: 'illusionist1',
-      name: 'Sophie',
-      avatar: '🎪',
-      position: [48.8568, 2.3520],
-      role: 'illusionist',
-      isReady: true,
-      level: 18,
-      health: 100,
-      stamina: 95,
-      powerCooldown: 15,
-      killCount: 0,
-      distanceTraveled: 0.9,
-      lastAction: "A créé un leurre"
-    },
-    {
-      id: 'hunter3',
-      name: 'Thomas',
-      avatar: '🎯',
-      position: [48.8564, 2.3526],
-      role: 'hunter',
-      isReady: true,
-      level: 10,
-      health: 85,
-      stamina: 75,
-      powerCooldown: 45,
-      killCount: 1,
-      distanceTraveled: 1.5,
-      lastAction: "A utilisé sa vision thermique"
-    },
-    {
-      id: 'informer1',
-      name: 'Lucas',
-      avatar: '🔍',
-      position: [48.8567, 2.3523],
-      role: 'informer',
-      isReady: true,
-      level: 20,
-      health: 100,
-      stamina: 100,
-      powerCooldown: 0,
-      killCount: 0,
-      distanceTraveled: 1.1,
-      lastAction: "A vendu une information"
-    },
-    {
-      id: 'hunter4',
-      name: 'Emma',
-      avatar: '🎯',
-      position: [48.8565, 2.3519],
-      role: 'hunter',
-      isReady: true,
-      level: 9,
-      health: 95,
-      stamina: 80,
-      powerCooldown: 20,
-      killCount: 0,
-      distanceTraveled: 0.7,
-      lastAction: "A coordonné une attaque"
+      lastAction: "Analyse les traces",
+      isStreaming: true,
+      streamDuration: 18,
+      streamPoints: 180,
+      distanceTraveled: 0.8
     },
     {
       id: 'saboteur1',
-      name: 'Hugo',
+      name: 'Marcus',
       avatar: '⚡',
-      position: [48.8563, 2.3521],
+      position: [48.8572, 2.3528],
       role: 'saboteur',
       isReady: true,
-      level: 15,
-      health: 100,
-      stamina: 85,
-      powerCooldown: 10,
-      killCount: 0,
-      distanceTraveled: 1.3,
-      lastAction: "A désactivé un pouvoir"
+      level: 8,
+      health: 85,
+      stamina: 75,
+      powerCooldown: 15,
+      lastAction: "Prépare un piège",
+      isStreaming: true,
+      streamDuration: 10,
+      streamPoints: 120,
+      distanceTraveled: 0.5
     }
   ]);
 
@@ -222,11 +178,22 @@ export default function SpectateGame() {
   } | null>(null);
 
   const [talkieMessages, setTalkieMessages] = useState<TalkieMessage[]>([]);
-  const [isTalkieEnabled, setIsTalkieEnabled] = useState(true);
-  const [selectedChannel, setSelectedChannel] = useState<'all' | 'hunters' | 'special'>('all');
+  const [isTalkieEnabled, setIsTalkieEnabled] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState('all');
   const [talkieVolume, setTalkieVolume] = useState(0.5);
   const [isPlayingRadioSound, setIsPlayingRadioSound] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamPoints, setStreamPoints] = useState(0);
+  const [streamDuration, setStreamDuration] = useState(0);
+  const [streamRewards] = useState<StreamReward[]>([
+    { duration: 5, points: 100, achieved: false },
+    { duration: 15, points: 300, achieved: false },
+    { duration: 30, points: 600, achieved: false }
+  ]);
+
+  const [showVideoModal, setShowVideoModal] = useState<string | null>(null);
 
   // Effet pour démarrer la musique au chargement de la page
   useEffect(() => {
@@ -238,6 +205,21 @@ export default function SpectateGame() {
         toggleMusic();
       }
     };
+  }, []);
+
+  // Effet pour simuler le mouvement des joueurs
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlayers(prevPlayers => prevPlayers.map(player => ({
+        ...player,
+        position: [
+          player.position[0] + (Math.random() - 0.5) * 0.0005,
+          player.position[1] + (Math.random() - 0.5) * 0.0005
+        ]
+      })));
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Mettre à jour le temps et simuler les mouvements des joueurs
@@ -361,12 +343,10 @@ export default function SpectateGame() {
 
         const newMessage: TalkieMessage = {
           id: Date.now().toString(),
-          playerId: randomPlayer.id,
           playerName: randomPlayer.name,
           playerRole: randomPlayer.role,
-          timestamp: new Date(),
-          duration: duration,
-          isPlaying: true
+          isPlaying: true,
+          timestamp: new Date()
         };
 
         setTalkieMessages(prev => [...prev, newMessage]);
@@ -396,74 +376,267 @@ export default function SpectateGame() {
     return () => clearInterval(interval);
   }, [isTalkieEnabled, players, talkieVolume]);
 
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <Head>
-        <title>Mode Spectateur - GRIM</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Header avec timer et contrôles */}
-        <div className="flex justify-between items-center mb-8">
-          <Link href="/spectate" className="text-blue-500 hover:text-blue-400">
-            ← Retour
-          </Link>
+  // Effet pour gérer le temps de streaming et les récompenses
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isStreaming) {
+      interval = setInterval(() => {
+        setStreamDuration(prev => {
+          const newDuration = prev + 1/60; // Incrémentation d'une minute
           
-          {/* Timer */}
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [1, 0.8, 1],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-500 text-transparent bg-clip-text"
-          >
-            {formatTime(timeLeft)}
-          </motion.div>
+          // Vérifier les récompenses
+          streamRewards.forEach(reward => {
+            if (!reward.achieved && newDuration >= reward.duration) {
+              setStreamPoints(prev => prev + reward.points);
+              addSystemMessage({
+                id: Date.now().toString(),
+                type: 'power',
+                description: `Récompense de streaming : +${reward.points} points pour ${reward.duration} minutes de direct !`,
+                timestamp: new Date()
+              });
+              reward.achieved = true;
+            }
+          });
+          
+          return newDuration;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isStreaming, streamRewards]);
 
-          {/* Menu hamburger pour mobile */}
-          <div className="relative lg:hidden">
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 relative z-[9999]"
+  return (
+    <>
+      <div className="min-h-screen bg-black text-white">
+        <Head>
+          <title>Mode Spectateur - GRIM</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+
+        <div className="container mx-auto px-4 py-8">
+          {/* Header avec timer et contrôles */}
+          <div className="flex justify-between items-center mb-8">
+            <Link href="/spectate" className="text-blue-500 hover:text-blue-400">
+              ← Retour
+            </Link>
+            
+            {/* Timer */}
+            <motion.div
+              animate={{
+                scale: [1, 1.1, 1],
+                opacity: [1, 0.8, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-500 text-transparent bg-clip-text"
             >
-              <span className="text-2xl">☰</span>
-            </button>
+              {formatTime(timeLeft)}
+            </motion.div>
+          </div>
 
-            {/* Menu mobile */}
-            <AnimatePresence>
-              {showMobileMenu && (
-                <>
-                  {/* Overlay pour fermer le menu en cliquant en dehors */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9997]"
-                    onClick={() => setShowMobileMenu(false)}
-                  />
+          {/* Grille principale */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Colonne de gauche - Liste des joueurs */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-gray-900 rounded-2xl p-6">
+                <h2 className="text-xl font-bold mb-4">Joueurs ({players.length})</h2>
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {players.map((player) => (
+                    <div
+                      key={player.id}
+                      className="bg-gray-800 rounded-xl p-3 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-purple-600/30 flex items-center justify-center text-xl">
+                          {player.avatar}
+                        </div>
+                        <div>
+                          <div className="font-medium">{player.name}</div>
+                          <div className="text-sm text-purple-400">Niveau {player.level}</div>
+                        </div>
+                      </div>
+                      {player.isStreaming && (
+                        <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Statistiques de la partie */}
+              <div className="bg-gray-900 rounded-2xl p-6">
+                <h2 className="text-xl font-bold mb-4">Statistiques</h2>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Évasions du Grim</span>
+                    <span className="font-bold">{gameStats.grimEscapes}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Captures des chasseurs</span>
+                    <span className="font-bold">{gameStats.hunterKills}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Pouvoirs utilisés</span>
+                    <span className="font-bold">{gameStats.powerUsed}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Talkie-Walkie (Desktop) */}
+              <div className="hidden lg:block bg-gray-900 rounded-2xl p-6">
+                <h3 className="text-lg font-bold mb-4">Contrôles audio</h3>
+                
+                {/* Musique d'ambiance */}
+                <div className="space-y-3 mb-6 border-b border-gray-800 pb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">Musique d'ambiance</span>
+                    <button
+                      onClick={toggleMusic}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+                        isMusicPlaying ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'
+                      }`}
+                    >
+                      <span>{isMusicPlaying ? '🔊' : '🔇'}</span>
+                      <span>{isMusicPlaying ? 'Activée' : 'Désactivée'}</span>
+                    </button>
+                  </div>
                   
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="absolute right-0 top-12 w-64 bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg p-4 space-y-4 z-[9998] border border-gray-800"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Musique</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={toggleMusic}
-                            className="p-2 rounded-lg bg-gray-800"
-                          >
-                            {isMusicPlaying ? '🔊' : '🔈'}
-                          </button>
+                  {isMusicPlaying && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-400">Volume</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={audioVolume}
+                        onChange={(e) => adjustVolume(parseFloat(e.target.value))}
+                        className="flex-1 accent-purple-500"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Talkie-walkie */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300">Talkie-walkie</span>
+                    <button
+                      onClick={() => setIsTalkieEnabled(!isTalkieEnabled)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
+                        isTalkieEnabled ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400'
+                      }`}
+                    >
+                      <span>📻</span>
+                      <span>{isTalkieEnabled ? 'Activé' : 'Désactivé'}</span>
+                    </button>
+                  </div>
+
+                  {isTalkieEnabled && (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-400">Volume</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={talkieVolume}
+                          onChange={(e) => setTalkieVolume(parseFloat(e.target.value))}
+                          className="flex-1 accent-purple-500"
+                        />
+                      </div>
+
+                      {/* Sélection du canal */}
+                      <div>
+                        <div className="text-sm text-gray-400 mb-2">Canal</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'all', label: 'Tous', icon: '📻' },
+                            { id: 'hunters', label: 'Chasseurs', icon: '🎯' },
+                            { id: 'specials', label: 'Spéciaux', icon: '🎭' }
+                          ].map((channel) => (
+                            <button
+                              key={channel.id}
+                              onClick={() => setSelectedChannel(channel.id)}
+                              className={`px-2 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                selectedChannel === channel.id
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-1">
+                                <span>{channel.icon}</span>
+                                <span className="truncate">{channel.label}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Menu camembert mobile */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="lg:hidden fixed bottom-4 right-4 z-50"
+              >
+                <button
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center shadow-lg text-2xl"
+                >
+                  🎮
+                </button>
+
+                <AnimatePresence>
+                  {showMobileMenu && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      className="absolute bottom-16 right-0 flex flex-col gap-4"
+                    >
+                      {/* Bouton Talkie-Walkie */}
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => {
+                          setIsTalkieEnabled(!isTalkieEnabled);
+                          setShowMobileMenu(false);
+                        }}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
+                          isTalkieEnabled ? 'bg-purple-600' : 'bg-gray-700'
+                        }`}
+                      >
+                        📻
+                      </motion.button>
+
+                      {/* Bouton Musique */}
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={toggleMusic}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
+                          isMusicPlaying ? 'bg-purple-600' : 'bg-gray-700'
+                        }`}
+                      >
+                        {isMusicPlaying ? '🔊' : '🔇'}
+                      </motion.button>
+
+                      {/* Contrôle du volume (apparaît si la musique est active) */}
+                      {isMusicPlaying && (
+                        <motion.div
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          className="absolute -left-32 bottom-0 bg-gray-900 rounded-lg p-3 flex items-center gap-2"
+                        >
                           <input
                             type="range"
                             min="0"
@@ -471,93 +644,277 @@ export default function SpectateGame() {
                             step="0.1"
                             value={audioVolume}
                             onChange={(e) => adjustVolume(parseFloat(e.target.value))}
-                            className="w-20 accent-blue-500"
+                            className="w-24 accent-purple-500"
                           />
-                        </div>
-                      </div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </div>
 
-                      <div className="space-y-2">
-                        <span className="text-gray-400">Talkie-walkie</span>
-                        <div className="flex items-center justify-between">
-                          <button
-                            onClick={() => setIsTalkieEnabled(!isTalkieEnabled)}
-                            className={`p-2 rounded-lg bg-gray-800 ${
-                              isTalkieEnabled ? 'text-green-400' : 'text-gray-400'
-                            }`}
-                          >
-                            📻 {isTalkieEnabled ? 'ON' : 'OFF'}
-                          </button>
-                          {isTalkieEnabled && (
-                            <input
-                              type="range"
-                              min="0"
-                              max="1"
-                              step="0.1"
-                              value={talkieVolume}
-                              onChange={(e) => setTalkieVolume(parseFloat(e.target.value))}
-                              className="w-20 accent-green-500"
-                            />
-                          )}
+            {/* Colonne centrale - Carte et flux vidéo */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-gray-900 rounded-2xl overflow-hidden h-[600px]">
+                <Map
+                  ref={mapRef}
+                  showGrim={true}
+                  onPlayerSelect={setSelectedPlayer}
+                  specialZones={activeEvents.filter(e => e.type === 'zone').map(e => ({
+                    id: e.id,
+                    type: 'danger',
+                    position: e.position || [0, 0],
+                    name: 'Zone dangereuse',
+                    description: e.description,
+                    icon: '⚠️',
+                    isActive: true,
+                    nextAppearance: 0
+                  }))}
+                  players={players}
+                  onToggleStream={() => {}}
+                  isStreaming={false}
+                  isSpectator={true}
+                />
+              </div>
+
+              <div className="bg-gray-900 rounded-2xl p-6">
+                <h2 className="text-xl font-bold mb-4">Flux vidéo en direct</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  {players.filter(p => p.isStreaming).length === 0 ? (
+                    <div className="col-span-2 bg-gray-800 rounded-xl p-4 text-center">
+                      <p className="text-gray-400">Aucun flux vidéo actif pour le moment</p>
+                    </div>
+                  ) : (
+                    players.filter(p => p.isStreaming).map((player) => (
+                      <motion.div
+                        key={player.id}
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-gray-800 rounded-xl overflow-hidden cursor-pointer group hover:ring-2 hover:ring-purple-500/50 transition-all"
+                        onClick={() => setShowVideoModal(player.id)}
+                      >
+                        <div className="relative w-full aspect-video">
+                          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-pink-900/50 animate-gradient" />
+                          
+                          <div className="absolute top-2 left-2 bg-red-600/90 px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
+                            <span className="animate-pulse">●</span>
+                            EN DIRECT
+                          </div>
+                          
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <div className="bg-black/80 backdrop-blur-sm px-3 py-2 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">{player.avatar}</span>
+                                <div>
+                                  <div className="font-medium">{player.name}</div>
+                                  <div className="text-xs text-purple-400">
+                                    {Math.floor(player.streamDuration || 0)} min • {player.streamPoints} points
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        {isTalkieEnabled && (
-                          <select
-                            value={selectedChannel}
-                            onChange={(e) => setSelectedChannel(e.target.value as 'all' | 'hunters' | 'special')}
-                            className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm"
-                          >
-                            <option value="all">Tous les canaux</option>
-                            <option value="hunters">Canal chasseurs</option>
-                            <option value="special">Canal spécial</option>
-                          </select>
-                        )}
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Informations de streaming */}
+              {isStreaming && (
+                <div className="bg-gray-900/80 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="animate-pulse text-red-500">●</span>
+                    <span className="font-medium">En direct</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-400">Durée du stream</div>
+                      <div className="font-bold">{Math.floor(streamDuration)} minutes</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Points gagnés</div>
+                      <div className="font-bold">{streamPoints}</div>
+                    </div>
+                  </div>
+                  {/* Barre de progression vers la prochaine récompense */}
+                  {streamRewards.find(r => !r.achieved) && (
+                    <div className="mt-2">
+                      <div className="text-sm text-gray-400 mb-1">
+                        Prochaine récompense dans {
+                          streamRewards.find(r => !r.achieved)?.duration || 0
+                        } minutes
+                      </div>
+                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                          style={{
+                            width: `${(streamDuration / (streamRewards.find(r => !r.achieved)?.duration || 1)) * 100}%`
+                          }}
+                        />
                       </div>
                     </div>
-                  </motion.div>
-                </>
+                  )}
+                </div>
               )}
-            </AnimatePresence>
-          </div>
-
-          {/* Contrôles desktop */}
-          <div className="hidden lg:flex items-center gap-8">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleMusic}
-                className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg flex items-center gap-2"
-                title={isMusicPlaying ? "Couper la musique" : "Jouer la musique"}
-              >
-                {isMusicPlaying ? '🔊' : '🔈'}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={audioVolume}
-                onChange={(e) => adjustVolume(parseFloat(e.target.value))}
-                className="w-24 accent-blue-500"
-              />
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setIsTalkieEnabled(!isTalkieEnabled)}
-                className={`bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 ${
-                  isTalkieEnabled ? 'text-green-400' : 'text-gray-400'
-                }`}
+
+            {/* Colonne de droite - Communications et événements */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-gray-900 rounded-2xl p-6">
+                <h2 className="text-xl font-bold mb-4">Communications</h2>
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {messages.filter(msg => !msg.isSystem).map((message) => (
+                    <div
+                      key={message.id}
+                      className="bg-gray-800 p-3 rounded-xl"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-purple-400">{message.author}</span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-gray-300">{message.content}</p>
+                    </div>
+                  ))}
+                  {messages.filter(msg => !msg.isSystem).length === 0 && (
+                    <div className="text-center text-gray-400 py-4">
+                      Aucune communication pour le moment
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Événements actifs */}
+              <div className="bg-gray-900 rounded-2xl p-6">
+                <h2 className="text-xl font-bold mb-4">Événements actifs</h2>
+                <div className="space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-gray-800/50 pr-2">
+                  {activeEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="bg-gray-800 rounded-xl p-4 border border-purple-500/20"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-lg bg-purple-600/30 flex items-center justify-center">
+                          <span>{
+                            event.type === 'zone' ? '⚠️' :
+                            event.type === 'power' ? '⚡' :
+                            event.type === 'encounter' ? '⚔️' :
+                            event.type === 'escape' ? '🏃' : '💀'
+                          }</span>
+                        </div>
+                        <div>
+                          <div className="font-medium">{event.description}</div>
+                          {event.duration && (
+                            <div className="text-sm text-purple-400">
+                              Expire dans {event.duration}s
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {event.position && (
+                        <div className="mt-2 text-sm text-gray-400 flex items-center gap-2">
+                          <span>📍</span>
+                          <span>Position: {event.position[0].toFixed(4)}, {event.position[1].toFixed(4)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {activeEvents.length === 0 && (
+                    <div className="text-center text-gray-400 py-4">
+                      Aucun événement actif
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal pour le flux vidéo en plein écran */}
+        <AnimatePresence>
+          {showVideoModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1001] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setShowVideoModal(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-gray-900 rounded-2xl p-6 max-w-5xl w-full max-h-[90vh] overflow-hidden"
+                onClick={e => e.stopPropagation()}
               >
-                📻 {isTalkieEnabled ? 'ON' : 'OFF'}
-              </button>
-              {isTalkieEnabled && (
-                <>
-                  <select
-                    value={selectedChannel}
-                    onChange={(e) => setSelectedChannel(e.target.value as 'all' | 'hunters' | 'special')}
-                    className="bg-gray-800 rounded-lg px-3 py-2"
+                <div className="flex justify-between items-center mb-4">
+                  {selectedPlayer && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-purple-600/30 flex items-center justify-center text-2xl">
+                        {selectedPlayer.avatar}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold">{selectedPlayer.name}</h3>
+                        <div className="text-sm text-purple-400">
+                          {Math.floor(selectedPlayer.streamDuration || 0)} minutes de stream
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowVideoModal(null)}
+                    className="text-gray-400 hover:text-white transition-colors"
                   >
-                    <option value="all">Tous les canaux</option>
-                    <option value="hunters">Canal chasseurs</option>
-                    <option value="special">Canal spécial</option>
-                  </select>
+                    ✕
+                  </button>
+                </div>
+
+                <div className="aspect-video bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-pink-900/50 animate-gradient" />
+                  
+                  <div className="absolute top-4 left-4 bg-red-600/90 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                    <span className="animate-pulse">●</span>
+                    EN DIRECT
+                  </div>
+
+                  {selectedPlayer && (
+                    <div className="absolute top-4 right-4 bg-purple-600/90 px-3 py-1 rounded-full text-sm font-medium">
+                      {selectedPlayer.streamPoints} points
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Interface mobile du talkie-walkie */}
+        <AnimatePresence>
+          {isTalkieEnabled && (
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="lg:hidden fixed bottom-20 left-4 right-4 bg-gray-900 rounded-2xl p-4 border border-purple-500/20 shadow-lg z-40"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Talkie-walkie</h3>
+                <button
+                  onClick={() => setIsTalkieEnabled(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Volume */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-400">Volume</span>
                   <input
                     type="range"
                     min="0"
@@ -565,389 +922,88 @@ export default function SpectateGame() {
                     step="0.1"
                     value={talkieVolume}
                     onChange={(e) => setTalkieVolume(parseFloat(e.target.value))}
-                    className="w-24 accent-green-500"
+                    className="flex-1 accent-purple-500"
                   />
-                </>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400">Mode spectateur</span>
-              <span className="text-2xl">👁️</span>
-            </div>
-          </div>
-        </div>
+                </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Section principale avec la carte */}
-          <div className="lg:col-span-3 space-y-8">
-            {/* Carte interactive */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="relative"
-            >
-              <Map
-                isSpectator={true}
-                players={players}
-              />
-              
-              {/* Événements sur la carte */}
-              <AnimatePresence>
-                {activeEvents.map(event => (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0 }}
-                    className="absolute"
-                    style={{
-                      left: `${(event.position?.[1] || 0) * 100}%`,
-                      top: `${(event.position?.[0] || 0) * 100}%`
-                    }}
-                  >
-                    <div className={`p-2 rounded-full ${
-                      event.type === 'zone' ? 'bg-red-500/50' :
-                      event.type === 'power' ? 'bg-purple-500/50' :
-                      event.type === 'encounter' ? 'bg-yellow-500/50' :
-                      event.type === 'escape' ? 'bg-green-500/50' :
-                      'bg-blue-500/50'
-                    }`}>
-                      {event.type === 'zone' ? '⚠️' :
-                       event.type === 'power' ? '⚡' :
-                       event.type === 'encounter' ? '⚔️' :
-                       event.type === 'escape' ? '🏃' :
-                       '💀'}
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* Statistiques des joueurs - Version modifiée */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {players.map(player => (
-                <motion.div
-                  key={player.id}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => setSelectedPlayer(player)}
-                  className={`bg-gray-900 p-4 rounded-xl cursor-pointer border-2 ${
-                    selectedPlayer?.id === player.id ? 'border-blue-500' : 'border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl
-                      ${player.role === 'grim' 
-                        ? 'bg-gradient-to-br from-purple-600 to-pink-600'
-                        : player.role === 'illusionist' ? 'bg-gradient-to-br from-pink-600 to-purple-600'
-                        : player.role === 'informer' ? 'bg-gradient-to-br from-cyan-600 to-blue-600'
-                        : player.role === 'saboteur' ? 'bg-gradient-to-br from-red-600 to-orange-600'
-                        : 'bg-gradient-to-br from-blue-600 to-cyan-600'
-                      }`}
-                    >
-                      {player.avatar}
-                    </div>
-                    <div>
-                      <div className="font-bold">{player.name}</div>
-                      <div className="text-sm text-gray-400">Niveau {player.level}</div>
-                    </div>
+                {/* Sélection du canal */}
+                <div>
+                  <div className="text-sm text-gray-400 mb-2">Canal</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'all', label: 'Tous', icon: '📻' },
+                      { id: 'hunters', label: 'Chasseurs', icon: '🎯' },
+                      { id: 'specials', label: 'Spéciaux', icon: '🎭' }
+                    ].map((channel) => (
+                      <button
+                        key={channel.id}
+                        onClick={() => setSelectedChannel(channel.id)}
+                        className={`px-2 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          selectedChannel === channel.id
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <span>{channel.icon}</span>
+                          <span className="truncate">{channel.label}</span>
+                        </div>
+                      </button>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Nouvelles statistiques */}
-                  <div className="space-y-3">
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <div className="text-gray-400">Éliminations</div>
-                        <div className="font-bold text-lg">{player.killCount}</div>
-                      </div>
-                      <div>
-                        <div className="text-gray-400">Distance</div>
-                        <div className="font-bold text-lg">{player.distanceTraveled?.toFixed(1)}km</div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-gray-800/50 p-2 rounded-lg">
-                      <div className="text-gray-400 text-sm">Dernière action</div>
-                      <div className="text-sm mt-1">{player.lastAction || 'Aucune action'}</div>
-                    </div>
-
-                    {player.powerCooldown > 0 && (
-                      <div className="bg-gray-800/50 p-2 rounded-lg">
-                        <div className="text-gray-400 text-sm">Pouvoir disponible dans</div>
-                        <div className="text-sm mt-1">{Math.ceil(player.powerCooldown / 60)}min</div>
+                {/* Messages récents */}
+                <div>
+                  <div className="text-sm text-gray-400 mb-2">Messages récents</div>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {talkieMessages.length > 0 ? (
+                      talkieMessages.slice(-3).map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`p-2 rounded-lg ${
+                            msg.isPlaying
+                              ? 'bg-purple-600/20 border border-purple-500/30'
+                              : 'bg-gray-800'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{msg.playerName}</span>
+                            {msg.isPlaying && (
+                              <motion.div
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ repeat: Infinity, duration: 1 }}
+                                className="w-2 h-2 rounded-full bg-purple-500"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-2">
+                        Aucun message récent
                       </div>
                     )}
-
-                    <div className="bg-gray-800/50 p-2 rounded-lg">
-                      <div className="text-gray-400 text-sm">Rôle</div>
-                      <div className="text-sm mt-1 font-medium">
-                        {player.role === 'grim' ? 'Grim' :
-                         player.role === 'illusionist' ? 'Illusionniste' :
-                         player.role === 'informer' ? 'Informateur' :
-                         player.role === 'saboteur' ? 'Saboteur' :
-                         'Chasseur'}
-                      </div>
-                    </div>
                   </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Statistiques globales de la partie */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="bg-gray-900/50 p-4 rounded-xl text-center">
-                <div className="text-2xl mb-2">🏃</div>
-                <div className="text-xl font-bold text-blue-400">{gameStats.grimEscapes}</div>
-                <div className="text-sm text-gray-400">Évasions</div>
+                </div>
               </div>
-              <div className="bg-gray-900/50 p-4 rounded-xl text-center">
-                <div className="text-2xl mb-2">💀</div>
-                <div className="text-xl font-bold text-blue-400">{gameStats.hunterKills}</div>
-                <div className="text-sm text-gray-400">Éliminations</div>
-              </div>
-              <div className="bg-gray-900/50 p-4 rounded-xl text-center">
-                <div className="text-2xl mb-2">⚡</div>
-                <div className="text-xl font-bold text-blue-400">{gameStats.powerUsed}</div>
-                <div className="text-sm text-gray-400">Pouvoirs</div>
-              </div>
-              <div className="bg-gray-900/50 p-4 rounded-xl text-center">
-                <div className="text-2xl mb-2">📏</div>
-                <div className="text-xl font-bold text-blue-400">{gameStats.distanceCovered}km</div>
-                <div className="text-sm text-gray-400">Distance</div>
-              </div>
-              <div className="bg-gray-900/50 p-4 rounded-xl text-center">
-                <div className="text-2xl mb-2">⚔️</div>
-                <div className="text-xl font-bold text-blue-400">{gameStats.closestEncounter}m</div>
-                <div className="text-sm text-gray-400">Plus proche</div>
-              </div>
-              <div className="bg-gray-900/50 p-4 rounded-xl text-center">
-                <div className="text-2xl mb-2">⏱️</div>
-                <div className="text-xl font-bold text-blue-400">{gameStats.longestChase}s</div>
-                <div className="text-sm text-gray-400">Plus longue traque</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Chat et événements */}
-          <div className="space-y-8">
-            {/* Informations du joueur sélectionné */}
-            <AnimatePresence>
-              {selectedPlayer && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="bg-gray-900 rounded-2xl p-6 shadow-neon-blue"
-                >
-                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    {selectedPlayer.avatar} {selectedPlayer.name}
-                  </h2>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm text-gray-400">Rôle</div>
-                        <div className="font-bold">
-                          {selectedPlayer.role === 'grim' ? 'Grim' :
-                           selectedPlayer.role === 'illusionist' ? 'Illusionniste' :
-                           selectedPlayer.role === 'informer' ? 'Informateur' :
-                           selectedPlayer.role === 'saboteur' ? 'Saboteur' :
-                           'Chasseur'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-400">Niveau</div>
-                        <div className="font-bold">{selectedPlayer.level}</div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-400 mb-1">Dernière action</div>
-                      <div className="bg-gray-800 p-3 rounded-lg">
-                        {selectedPlayer.lastAction || 'Aucune action récente'}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Flux d'événements */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-gray-900 rounded-2xl p-6 shadow-neon-blue"
-            >
-              <h2 className="text-xl font-bold mb-4">Événements de la partie</h2>
-              <div className="space-y-4 h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-800">
-                {messages.map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className={`p-3 rounded-lg ${
-                      msg.isSystem
-                        ? 'bg-blue-900/30 border border-blue-500/20'
-                        : 'bg-gray-800'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className={`font-semibold flex items-center gap-2 ${
-                        msg.isSystem ? 'text-blue-400' : ''
-                      }`}>
-                        {msg.icon && <span>{msg.icon}</span>}
-                        {msg.author}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {msg.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-300">{msg.content}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Moments forts */}
-        <AnimatePresence>
-          {highlightMoment && (
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-6 shadow-lg max-w-md"
-            >
-              <h3 className="text-xl font-bold mb-2">{highlightMoment.title}</h3>
-              <p className="text-gray-200">{highlightMoment.description}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Section des messages talkie-walkie */}
-        {isTalkieEnabled && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-8 right-8 w-80 sm:w-96 bg-gradient-to-br from-gray-900/95 to-green-900/20 backdrop-blur-md border-2 border-green-500/30 rounded-2xl p-4 sm:p-6 shadow-neon-green"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className={`relative ${isPlayingRadioSound ? 'animate-pulse' : ''}`}>
-                  <span className="text-2xl sm:text-3xl">📻</span>
-                  {isPlayingRadioSound && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-ping" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-bold">Talkie-Walkie</h3>
-                  <div className={`text-xs ${isPlayingRadioSound ? 'text-green-400' : 'text-gray-400'}`}>
-                    {isPlayingRadioSound ? 'Transmission en cours...' : 'En attente de transmission'}
-                  </div>
-                </div>
-              </div>
-              {isPlayingRadioSound && (
-                <div className="flex items-center gap-2 bg-green-500/20 px-3 py-1.5 rounded-full">
-                  <span className="flex space-x-1">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-0" />
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-150" />
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse delay-300" />
-                  </span>
-                  <span className="text-green-400 text-xs font-medium">LIVE</span>
-                </div>
-              )}
-            </div>
+        <style jsx global>{`
+          @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
 
-            <div className="space-y-3 max-h-72 sm:max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-green-500 scrollbar-track-gray-800/50 pr-2">
-              {talkieMessages
-                .filter(msg => {
-                  if (selectedChannel === 'all') return true;
-                  if (selectedChannel === 'hunters') return msg.playerRole === 'hunter';
-                  return ['illusionist', 'informer', 'saboteur'].includes(msg.playerRole);
-                })
-                .map((msg) => (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className={`relative ${
-                      msg.isPlaying 
-                        ? 'bg-gradient-to-r from-green-900/40 to-green-800/20 border-2 border-green-500/30' 
-                        : 'bg-gray-800/30'
-                    } rounded-lg p-3 sm:p-4`}
-                  >
-                    {msg.isPlaying && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
-                      </div>
-                    )}
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          msg.isPlaying ? 'bg-green-500/20' : 'bg-gray-700/50'
-                        }`}>
-                          <span className="text-xl">
-                            {msg.playerRole === 'grim' ? '🎭' :
-                             msg.playerRole === 'hunter' ? '🎯' :
-                             msg.playerRole === 'illusionist' ? '🎪' :
-                             msg.playerRole === 'informer' ? '🔍' :
-                             '⚡'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-semibold text-sm sm:text-base">{msg.playerName}</span>
-                          <div className="text-xs text-gray-400">
-                            {msg.timestamp.toLocaleTimeString()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className={`flex-1 h-2 rounded-full overflow-hidden ${
-                        msg.isPlaying ? 'bg-gray-700' : 'bg-gray-700/50'
-                      }`}>
-                        {msg.isPlaying && (
-                          <motion.div
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
-                            transition={{ duration: msg.duration, ease: "linear" }}
-                            className="h-full bg-gradient-to-r from-green-500 to-green-400"
-                          />
-                        )}
-                      </div>
-                      <span className={`text-xs font-medium ${msg.isPlaying ? 'text-green-400' : 'text-gray-400'}`}>
-                        {msg.isPlaying ? 'EN DIRECT' : `${msg.duration}s`}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
-            </div>
-          </motion.div>
-        )}
+          .animate-gradient {
+            background-size: 200% 200%;
+            animation: gradient 15s ease infinite;
+          }
+        `}</style>
       </div>
-
-      <style jsx>{`
-        .shadow-neon-blue {
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-        }
-        
-        .shadow-neon-green {
-          box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 6px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: #1f2937;
-          border-radius: 3px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: #3b82f6;
-          border-radius: 3px;
-        }
-      `}</style>
-    </div>
+    </>
   );
 } 

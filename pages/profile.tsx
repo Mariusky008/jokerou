@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import GameRules from '../components/GameRules';
 import PlayerMessages from '../components/PlayerMessages';
+import GameLeaderboard from '../components/GameLeaderboard';
 
 // Types pour les données du profil
 interface Badge {
@@ -62,6 +63,39 @@ interface Notification {
   title: string;
   description: string;
   icon: string;
+  date: Date;
+  read: boolean;
+}
+
+interface PlayerStats {
+  totalGames: number;
+  winRate: number;
+  bestRole: string;
+  averagePoints: number;
+  highestPoints: number;
+  totalKills: number;
+  totalDistance: number;
+  totalPowerUses: number;
+  recentGames: {
+    id: string;
+    date: Date;
+    role: string;
+    points: number;
+    position: number;
+    winner: string;
+    achievements: {
+      kills: number;
+      distance: number;
+      powerUses: number;
+    };
+  }[];
+}
+
+interface Message {
+  id: string;
+  senderName: string;
+  senderAvatar: string;
+  content: string;
   date: Date;
   read: boolean;
 }
@@ -193,37 +227,57 @@ export default function Profile() {
   // Ajout d'un state pour la navigation par onglets
   const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'badges'>('overview');
 
-  // Ajouter le state pour les notifications
+  // États pour les messages et notifications
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      senderName: 'Alex',
+      senderAvatar: '🎯',
+      content: 'Bien joué pour la dernière partie !',
+      date: new Date('2024-01-15T14:30:00'),
+      read: false
+    },
+    {
+      id: '2',
+      senderName: 'Sophie',
+      senderAvatar: '🔍',
+      content: 'On fait une partie ce soir ?',
+      date: new Date('2024-01-15T16:45:00'),
+      read: false
+    }
+  ]);
+
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
       type: 'badge',
       title: 'Nouveau badge débloqué !',
-      description: 'Vous avez obtenu le badge "Chasseur Élite"',
+      description: 'Vous avez obtenu le badge "Chasseur expert"',
       icon: '🏆',
-      date: new Date(Date.now() - 3600000),
+      date: new Date('2024-01-15T10:00:00'),
       read: false
     },
     {
       id: '2',
-      type: 'role',
-      title: 'Nouveau rôle disponible',
-      description: 'Le rôle "Illusionniste" est maintenant disponible',
-      icon: '🎭',
-      date: new Date(Date.now() - 7200000),
+      type: 'level',
+      title: 'Niveau supérieur !',
+      description: 'Vous avez atteint le niveau 15',
+      icon: '⭐',
+      date: new Date('2024-01-14T20:30:00'),
       read: false
     },
     {
       id: '3',
       type: 'power',
-      title: 'Nouveau pouvoir débloqué',
-      description: 'Vous avez débloqué le pouvoir "Vision Thermique"',
-      icon: '🔥',
-      date: new Date(Date.now() - 10800000),
+      title: 'Nouveau pouvoir disponible',
+      description: 'Vous avez débloqué le pouvoir "Vision nocturne"',
+      icon: '👁️',
+      date: new Date('2024-01-14T15:15:00'),
       read: false
     }
   ]);
 
+  const [showMessages, setShowMessages] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -237,37 +291,6 @@ export default function Profile() {
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
-
-  // Ajouter ces states en haut du composant avec les autres states
-  const [showMessages, setShowMessages] = useState(false);
-  const [messages, setMessages] = useState<{
-    id: string;
-    senderId: string;
-    senderName: string;
-    senderAvatar: string;
-    content: string;
-    date: Date;
-    read: boolean;
-  }[]>([
-    {
-      id: '1',
-      senderId: '2',
-      senderName: 'Alex',
-      senderAvatar: '👤',
-      content: 'Bien joué pour la dernière partie !',
-      date: new Date(Date.now() - 1800000),
-      read: false
-    },
-    {
-      id: '2',
-      senderId: '3',
-      senderName: 'Marie',
-      senderAvatar: '👤',
-      content: 'On fait une partie ce soir ?',
-      date: new Date(Date.now() - 3600000),
-      read: false
-    }
-  ]);
 
   const unreadMessages = messages.filter(m => !m.read).length;
 
@@ -283,6 +306,59 @@ export default function Profile() {
 
   // Ajouter ces states en haut du composant avec les autres states
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  // Simuler les statistiques du joueur (à remplacer par des données réelles)
+  const [playerStats] = useState<PlayerStats>({
+    totalGames: 15,
+    winRate: 0.67,
+    bestRole: 'hunter',
+    averagePoints: 820,
+    highestPoints: 980,
+    totalKills: 42,
+    totalDistance: 45.8,
+    totalPowerUses: 89,
+    recentGames: [
+      {
+        id: 'game-4',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        role: 'hunter',
+        points: 980,
+        position: 1,
+        winner: 'Chasseurs',
+        achievements: {
+          kills: 6,
+          distance: 4.2,
+          powerUses: 11
+        }
+      },
+      {
+        id: 'game-2',
+        date: new Date('2024-01-14T18:30:00'),
+        role: 'hunter',
+        points: 920,
+        position: 1,
+        winner: 'Chasseurs',
+        achievements: {
+          kills: 5,
+          distance: 3.5,
+          powerUses: 9
+        }
+      },
+      {
+        id: 'game-1',
+        date: new Date('2024-01-15T20:00:00'),
+        role: 'hunter',
+        points: 850,
+        position: 2,
+        winner: 'Grim',
+        achievements: {
+          kills: 3,
+          distance: 2.5,
+          powerUses: 6
+        }
+      }
+    ]
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 text-white">
@@ -702,27 +778,106 @@ export default function Profile() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
             >
-              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
-                <div className="text-3xl mb-2">🎮</div>
-                <div className="text-2xl font-bold text-purple-400">{stats.gamesPlayed}</div>
-                <div className="text-gray-400">Parties jouées</div>
+              {/* Statistiques globales */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                  <div className="text-3xl mb-2">🎮</div>
+                  <div className="text-2xl font-bold text-purple-400">{playerStats.totalGames}</div>
+                  <div className="text-gray-400">Parties jouées</div>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                  <div className="text-3xl mb-2">🏆</div>
+                  <div className="text-2xl font-bold text-purple-400">{Math.round(playerStats.winRate * 100)}%</div>
+                  <div className="text-gray-400">Taux de victoire</div>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                  <div className="text-3xl mb-2">⭐</div>
+                  <div className="text-2xl font-bold text-purple-400">{playerStats.averagePoints}</div>
+                  <div className="text-gray-400">Points moyens</div>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
+                  <div className="text-3xl mb-2">🎯</div>
+                  <div className="text-2xl font-bold text-purple-400">{playerStats.highestPoints}</div>
+                  <div className="text-gray-400">Meilleur score</div>
+                </div>
               </div>
-              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
-                <div className="text-3xl mb-2">🏆</div>
-                <div className="text-2xl font-bold text-purple-400">{stats.gamesWon}</div>
-                <div className="text-gray-400">Victoires</div>
+
+              {/* Achievements totaux */}
+              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20 mb-8">
+                <h2 className="text-xl font-bold mb-4">Achievements totaux</h2>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🎯</span>
+                      <div>
+                        <div className="text-sm text-gray-400">Éliminations</div>
+                        <div className="text-xl font-bold">{playerStats.totalKills}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🏃</span>
+                      <div>
+                        <div className="text-sm text-gray-400">Distance (km)</div>
+                        <div className="text-xl font-bold">{playerStats.totalDistance}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">⚡</span>
+                      <div>
+                        <div className="text-sm text-gray-400">Pouvoirs utilisés</div>
+                        <div className="text-xl font-bold">{playerStats.totalPowerUses}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Parties récentes */}
               <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
-                <div className="text-3xl mb-2">🎯</div>
-                <div className="text-2xl font-bold text-purple-400">{stats.captureRate}%</div>
-                <div className="text-gray-400">Taux de capture</div>
-              </div>
-              <div className="bg-gray-800 rounded-xl p-6 border border-purple-500/20">
-                <div className="text-3xl mb-2">🏃‍♂️</div>
-                <div className="text-2xl font-bold text-purple-400">{stats.escapeRate}%</div>
-                <div className="text-gray-400">Taux d'évasion</div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">Parties récentes</h2>
+                  <Link
+                    href="/leaderboards"
+                    className="text-purple-400 hover:text-purple-300 text-sm"
+                  >
+                    Voir tout l'historique →
+                  </Link>
+                </div>
+                <div className="space-y-4">
+                  {playerStats.recentGames.map((game, index) => (
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-gray-700/50 rounded-xl p-4"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-medium">
+                            {new Date(game.date).toLocaleDateString()} - {game.role}
+                          </div>
+                          <div className="text-sm text-purple-400">
+                            Position: #{game.position} • {game.winner === 'Grim' ? 'Victoire du Grim' : 'Victoire des Chasseurs'}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-xl">{game.points} pts</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 text-sm text-gray-400">
+                        <span title="Éliminations">🎯 {game.achievements.kills}</span>
+                        <span title="Distance">🏃 {game.achievements.distance}km</span>
+                        <span title="Pouvoirs">⚡ {game.achievements.powerUses}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             </motion.div>
           )}
@@ -851,6 +1006,152 @@ export default function Profile() {
 
       {/* Modal des règles */}
       <GameRules isOpen={showRules} onClose={() => setShowRules(false)} />
+
+      {/* Modal des messages */}
+      <AnimatePresence>
+        {showMessages && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start justify-center pt-20 px-4"
+            onClick={() => setShowMessages(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-gray-900 rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-hidden shadow-xl border border-purple-500/20"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">Messages</h2>
+                <button
+                  onClick={() => setShowMessages(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {messages.length > 0 ? (
+                  messages.map(message => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`bg-gray-800 rounded-xl p-4 ${!message.read ? 'border-l-4 border-purple-500' : ''}`}
+                      onClick={() => markMessageAsRead(message.id)}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-xl">
+                          {message.senderAvatar}
+                        </div>
+                        <div>
+                          <div className="font-medium">{message.senderName}</div>
+                          <div className="text-sm text-gray-400">
+                            {new Date(message.date).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-gray-300">{message.content}</p>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    Aucun message
+                  </div>
+                )}
+              </div>
+
+              {messages.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-800">
+                  <button
+                    onClick={markAllMessagesAsRead}
+                    className="text-purple-400 hover:text-purple-300 text-sm"
+                  >
+                    Tout marquer comme lu
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal des notifications */}
+      <AnimatePresence>
+        {showNotifications && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start justify-center pt-20 px-4"
+            onClick={() => setShowNotifications(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-gray-900 rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-hidden shadow-xl border border-purple-500/20"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">Notifications</h2>
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {notifications.length > 0 ? (
+                  notifications.map(notification => (
+                    <motion.div
+                      key={notification.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`bg-gray-800 rounded-xl p-4 ${!notification.read ? 'border-l-4 border-purple-500' : ''}`}
+                      onClick={() => markAsRead(notification.id)}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-xl">
+                          {notification.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">{notification.title}</div>
+                          <div className="text-sm text-gray-400">
+                            {new Date(notification.date).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-gray-300">{notification.description}</p>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-400 py-8">
+                    Aucune notification
+                  </div>
+                )}
+              </div>
+
+              {notifications.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-800">
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-purple-400 hover:text-purple-300 text-sm"
+                  >
+                    Tout marquer comme lu
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 } 

@@ -6,6 +6,9 @@ import TalkieWalkie from '../components/TalkieWalkie';
 import Link from 'next/link';
 import EventEffects from '../components/EventEffects';
 import { useAudio } from '../contexts/AudioContext';
+import GameLeaderboard from '../components/GameLeaderboard';
+import { gameService } from '../services/gameService';
+import { PlayerAction } from '../utils/pointsCalculator';
 
 // Import dynamique de la carte pour éviter les erreurs SSR
 const Map = dynamic(
@@ -60,9 +63,26 @@ interface Player {
   name: string;
   avatar: string;
   position: [number, number];
-  role: 'grim' | 'hunter';
+  role: 'grim' | 'hunter' | 'illusionist' | 'informer' | 'saboteur';
   isReady: boolean;
   level: number;
+  points: number;
+  achievements?: {
+    kills?: number;
+    distance?: number;
+    powerUses?: number;
+    timeAlive?: number;
+  };
+  health?: number;
+  stamina?: number;
+  powerCooldown?: number;
+  lastAction?: string;
+  killCount?: number;
+  distanceTraveled?: number;
+  isStreaming?: boolean;
+  streamDuration?: number;
+  streamPoints?: number;
+  speed?: number;
 }
 
 // Types pour les événements spontanés
@@ -243,40 +263,73 @@ export default function Game() {
     role: isGrim ? 'grim' : 'hunter',
     isReady: true,
     level: 10,
+    points: 150,
+    achievements: {
+      kills: 2,
+      distance: 1.5,
+      powerUses: 3
+    },
     speed: 1
   });
 
-  const [players] = useState<Player[]>([
+  const [players, setPlayers] = useState<Player[]>([
     {
       id: 'player1',
       name: 'Alex',
       avatar: '👤',
-      position: [48.8566, 2.3522],
+      position: [48.8570, 2.3525],
       role: 'hunter',
       isReady: true,
-      level: 8
+      level: 8,
+      points: 150,
+      achievements: {
+        kills: 2,
+        distance: 1.5,
+        powerUses: 3
+      }
     },
     {
       id: 'player2',
       name: 'Marie',
       avatar: '👤',
-      position: [48.8566, 2.3522],
+      position: [48.8562, 2.3518],
       role: 'hunter',
       isReady: true,
-      level: 12
+      level: 12,
+      points: 280,
+      achievements: {
+        kills: 1,
+        distance: 2.1,
+        powerUses: 5
+      }
     },
     {
       id: 'player3',
       name: 'Lucas',
       avatar: '👤',
-      position: [48.8566, 2.3522],
+      position: [48.8575, 2.3515],
       role: 'hunter',
       isReady: true,
-      level: 10
+      level: 10,
+      points: 200,
+      achievements: {
+        kills: 0,
+        distance: 1.8,
+        powerUses: 4
+      }
     }
   ]);
 
   const mapRef = useRef(null);
+
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamPoints, setStreamPoints] = useState(0);
+  const [streamDuration, setStreamDuration] = useState(0);
+  const [streamRewards] = useState([
+    { duration: 5, points: 100, achieved: false },
+    { duration: 15, points: 300, achieved: false },
+    { duration: 30, points: 600, achieved: false }
+  ]);
 
   // Fonction pour générer un événement spontané
   const generateSpontaneousEvent = useCallback((playerPosition: [number, number]) => {
@@ -632,10 +685,32 @@ export default function Game() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const usePower = (powerId: string) => {
+  const usePower = async (powerId: string) => {
     setPowers((prev) =>
       prev.map((power) => {
         if (power.id === powerId && power.remainingUses > 0 && power.cooldown === 0) {
+          // Enregistrer l'action et les points
+          const action: PlayerAction = {
+            type: 'power_use',
+            value: 1,
+            details: {
+              powerType: power.id
+            }
+          };
+          
+          gameService.recordPlayerAction(currentPlayer.id, action)
+            .then(points => {
+              // Mettre à jour les points du joueur
+              setCurrentPlayer(prev => ({
+                ...prev,
+                points: prev.points + points,
+                achievements: {
+                  ...prev.achievements,
+                  powerUses: (prev.achievements?.powerUses || 0) + 1
+                }
+              }));
+            });
+
           // Jouer le son d'activation du pouvoir
           if (typeof window !== 'undefined' && (window as any).playPowerSound) {
             (window as any).playPowerSound('activation');
@@ -645,12 +720,6 @@ export default function Game() {
             remainingUses: power.remainingUses - 1,
             cooldown: powerId === 'ghost' ? 30 : 15
           };
-        }
-        // Si le cooldown vient de se terminer, jouer le son de recharge
-        if (power.id === powerId && power.cooldown === 1) {
-          if (typeof window !== 'undefined' && (window as any).playPowerSound) {
-            (window as any).playPowerSound('recharge');
-          }
         }
         return power;
       })
@@ -776,6 +845,141 @@ export default function Game() {
     setActiveEvents(prev => [...prev, newEvent]);
   };
 
+  // Remplacer l'effet de streaming existant
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isStreaming) {
+      interval = setInterval(async () => {
+        setStreamDuration(prev => {
+          const newDuration = prev + 1/60; // Incrémentation d'une minute
+          
+          // Enregistrer l'action de streaming
+          const action: PlayerAction = {
+            type: 'stream',
+            details: {
+              streamDuration: newDuration
+            }
+          };
+          
+          gameService.recordPlayerAction(currentPlayer.id, action)
+            .then(points => {
+              setStreamPoints(prev => prev + points);
+              setCurrentPlayer(prev => ({
+                ...prev,
+                points: prev.points + points,
+                achievements: {
+                  ...prev.achievements,
+                  streamMinutes: Math.floor(newDuration)
+                }
+              }));
+
+              // Vérifier les récompenses de streaming
+              streamRewards.forEach(reward => {
+                if (!reward.achieved && newDuration >= reward.duration) {
+                  setMessages(prev => [...prev, {
+                    id: Date.now().toString(),
+                    author: 'Système',
+                    content: `🎉 Récompense de streaming : +${points} points pour ${reward.duration} minutes de direct !`,
+                    timestamp: new Date()
+                  }]);
+                  reward.achieved = true;
+                }
+              });
+            });
+          
+          return newDuration;
+        });
+      }, 60000); // Vérifier toutes les minutes
+    }
+    return () => clearInterval(interval);
+  }, [isStreaming, currentPlayer.id]);
+
+  const handleToggleStream = useCallback(() => {
+    if (!isStreaming) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          setIsStreaming(true);
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            author: 'Système',
+            content: 'Vous avez commencé à diffuser votre vidéo en direct.',
+            timestamp: new Date()
+          }]);
+        })
+        .catch(error => {
+          console.error('Erreur d\'accès à la caméra:', error);
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            author: 'Système',
+            content: 'Impossible d\'accéder à la caméra. Vérifiez vos permissions.',
+            timestamp: new Date()
+          }]);
+        });
+    } else {
+      setIsStreaming(false);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        author: 'Système',
+        content: 'Vous avez arrêté la diffusion en direct.',
+        timestamp: new Date()
+      }]);
+    }
+  }, [isStreaming]);
+
+  useEffect(() => {
+    // Simuler le mouvement des joueurs
+    const interval = setInterval(() => {
+      setPlayers(prevPlayers => prevPlayers.map(player => ({
+        ...player,
+        position: [
+          player.position[0] + (Math.random() - 0.5) * 0.0005,
+          player.position[1] + (Math.random() - 0.5) * 0.0005
+        ]
+      })));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const recordDistance = async (distance: number) => {
+    const action: PlayerAction = {
+      type: 'distance',
+      value: distance
+    };
+
+    const points = await gameService.recordPlayerAction(currentPlayer.id, action);
+    setCurrentPlayer(prev => ({
+      ...prev,
+      points: prev.points + points,
+      achievements: {
+        ...prev.achievements,
+        distance: (prev.achievements?.distance || 0) + distance
+      }
+    }));
+  };
+
+  useEffect(() => {
+    const initGame = async () => {
+      const initialPlayers = [currentPlayer, ...players].map(player => ({
+        id: player.id,
+        position: player.position
+      }));
+
+      await gameService.startGame(initialPlayers, [48.8566, 2.3522]);
+    };
+
+    initGame();
+
+    return () => {
+      // Terminer la partie si le composant est démonté
+      if (currentPlayer.role === 'grim') {
+        gameService.endGame('grim');
+      } else {
+        gameService.endGame('hunters');
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-white relative">
       {/* Bouton pour créer des événements */}
@@ -884,13 +1088,23 @@ export default function Game() {
           <div className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-transparent bg-clip-text">
             {formatTime(timeLeft)}
           </div>
-          <Link
-            href="/profile"
-            className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-1 px-2 md:py-3 md:px-6 text-xs md:text-base rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 md:gap-2"
-          >
-            <span className="text-xs md:text-base">👤</span>
-            Mon profil
-          </Link>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/leaderboards"
+              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-1 px-2 md:py-3 md:px-6 text-xs md:text-base rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 md:gap-2"
+            >
+              <span className="text-xs md:text-base">🏆</span>
+              Classements
+            </Link>
+            <Link
+              href="/profile"
+              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-1 px-2 md:py-3 md:px-6 text-xs md:text-base rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 md:gap-2"
+            >
+              <span className="text-xs md:text-base">👤</span>
+              Mon profil
+            </Link>
+          </div>
         </motion.div>
 
         {/* Effets visuels pour les événements */}
@@ -951,11 +1165,49 @@ export default function Game() {
               <Map
                 ref={mapRef}
                 showGrim={showGrim}
-                onPlayerSelect={(player) => {
-                  setShowChat(true);
-                }}
+                onPlayerSelect={(player: Player) => setSelectedPlayer(player)}
                 specialZones={specialZones}
+                onToggleStream={handleToggleStream}
+                isStreaming={isStreaming}
               />
+
+              {/* Informations de streaming */}
+              {isStreaming && (
+                <div className="bg-gray-900/80 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="animate-pulse text-red-500">●</span>
+                    <span className="font-medium">En direct</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-400">Durée du stream</div>
+                      <div className="font-bold">{Math.floor(streamDuration)} minutes</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">Points gagnés</div>
+                      <div className="font-bold">{streamPoints}</div>
+                    </div>
+                  </div>
+                  {/* Barre de progression vers la prochaine récompense */}
+                  {streamRewards.find(r => !r.achieved) && (
+                    <div className="mt-2">
+                      <div className="text-sm text-gray-400 mb-1">
+                        Prochaine récompense dans {
+                          streamRewards.find(r => !r.achieved)?.duration || 0
+                        } minutes
+                      </div>
+                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                          style={{
+                            width: `${(streamDuration / (streamRewards.find(r => !r.achieved)?.duration || 1)) * 100}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
 
             {/* Événements spéciaux */}
@@ -967,26 +1219,26 @@ export default function Game() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className={`p-3 rounded-lg backdrop-blur-sm transition-all duration-300 cursor-help
+                    className={`relative p-4 rounded-lg backdrop-blur-sm transition-all duration-300 cursor-help overflow-hidden
                       ${event.isActive 
                         ? `bg-gradient-to-r 
-                            ${event.rarity === 'legendary' ? 'from-yellow-600/80 to-yellow-500/80 shadow-yellow-500/50' :
-                              event.rarity === 'epic' ? 'from-purple-600/80 to-pink-500/80 shadow-purple-500/50' :
-                              event.rarity === 'rare' ? 'from-blue-600/80 to-cyan-500/80 shadow-blue-500/50' :
-                              'from-green-600/80 to-emerald-500/80 shadow-green-500/50'}
-                            shadow-lg animate-pulse`
-                        : 'bg-gray-800/50'
+                            ${event.rarity === 'legendary' ? 'from-yellow-600 to-yellow-500 shadow-yellow-500/50' :
+                              event.rarity === 'epic' ? 'from-purple-600 to-pink-500 shadow-purple-500/50' :
+                              event.rarity === 'rare' ? 'from-blue-600 to-cyan-500 shadow-blue-500/50' :
+                              'from-green-600 to-emerald-500 shadow-green-500/50'}
+                            shadow-lg`
+                        : 'bg-gray-800/80 hover:bg-gray-800/90'
                       }`}
                     title={event.description}
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{event.icon}</span>
-                      <div>
-                        <div className={`font-bold ${event.isActive ? 'text-white' : 'text-gray-400'}`}>
+                      <div className="flex-1">
+                        <div className={`font-bold text-lg ${event.isActive ? 'text-white' : 'text-gray-300'}`}>
                           {event.name}
                         </div>
-                        <div className={`text-sm ${event.isActive ? 'text-gray-200' : 'text-gray-500'}`}>
-                          {event.rarity.charAt(0).toUpperCase() + event.rarity.slice(1)}
+                        <div className={`text-sm ${event.isActive ? 'text-white/90' : 'text-gray-400'}`}>
+                          {event.description}
                         </div>
                       </div>
                     </div>
@@ -1191,6 +1443,14 @@ export default function Game() {
         onMessageStart={handleMessageStart}
         onMessageEnd={handleMessageEnd}
       />
+
+      <div className="mt-8">
+        <GameLeaderboard 
+          players={[currentPlayer, ...players]}
+          gameId={`game-${Date.now()}`}
+          gameDate={new Date()}
+        />
+      </div>
 
       <style jsx global>{`
         .shadow-neon {

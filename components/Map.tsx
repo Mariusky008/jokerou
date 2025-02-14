@@ -1,9 +1,63 @@
 import { useEffect, useState, useCallback, forwardRef, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import type { Map as LeafletMap } from 'leaflet';
+import type { LeafletEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import PlayerMessages from './PlayerMessages';
 import dynamic from 'next/dynamic';
+import { AnimatePresence, motion } from 'framer-motion';
+
+interface PlayerLocation {
+  id: string;
+  name: string;
+  avatar: string;
+  position: [number, number];
+  role: 'grim' | 'hunter' | 'illusionist' | 'informer' | 'saboteur';
+  isReady: boolean;
+  level: number;
+  health?: number;
+  stamina?: number;
+  powerCooldown?: number;
+  lastAction?: string;
+  killCount?: number;
+  distanceTraveled?: number;
+  isStreaming?: boolean;
+  streamDuration?: number;
+  streamPoints?: number;
+  speed?: number;
+}
+
+interface MapProps {
+  showGrim: boolean;
+  onPlayerSelect: (player: PlayerLocation) => void;
+  specialZones: SpecialZone[];
+  isSpectator?: boolean;
+  players?: PlayerLocation[];
+  onToggleStream?: () => void;
+  isStreaming?: boolean;
+}
+
+interface SpecialZone {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  type: 'recharge' | 'cover' | 'surveillance' | 'bonus' | 'danger';
+  isActive: boolean;
+  nextAppearance: number;
+  position?: [number, number];
+}
+
+interface PowerSpot {
+  id: string;
+  type: 'power' | 'bonus' | 'trap' | 'teleport';
+  position: [number, number];
+  name: string;
+  description: string;
+  icon: string;
+  availableIn: number;
+  forRole?: 'grim' | 'hunter' | 'all';
+}
 
 // Styles CSS pour les marqueurs Leaflet
 const markerStyle = `
@@ -23,26 +77,43 @@ const markerStyle = `
     align-items: center;
     justify-content: center;
     position: relative;
-    transform-origin: center bottom;
+    transform: translate(-50%, -50%);
     transition: all 0.3s ease;
+    z-index: 1000;
   }
 
   .marker-pin:hover {
-    transform: scale(1.1);
+    transform: translate(-50%, -50%) scale(1.1);
+    z-index: 1001;
   }
 
   .marker-pin.grim {
     background: linear-gradient(45deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
-    animation: pulse 2s infinite;
   }
 
   .marker-pin.hunter {
     background: linear-gradient(45deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9));
   }
 
+  .marker-pin.illusionist {
+    background: linear-gradient(45deg, rgba(236, 72, 153, 0.9), rgba(139, 92, 246, 0.9));
+    z-index: 998;
+  }
+
+  .marker-pin.informer {
+    background: linear-gradient(45deg, rgba(6, 182, 212, 0.9), rgba(59, 130, 246, 0.9));
+    z-index: 997;
+  }
+
+  .marker-pin.saboteur {
+    background: linear-gradient(45deg, rgba(239, 68, 68, 0.9), rgba(249, 115, 22, 0.9));
+    z-index: 996;
+  }
+
   .marker-avatar {
     font-size: 20px;
-    z-index: 2;
+    line-height: 1;
+    z-index: 1002;
   }
 
   .marker-level {
@@ -56,6 +127,7 @@ const markerStyle = `
     border-radius: 10px;
     font-size: 12px;
     white-space: nowrap;
+    z-index: 1003;
   }
 
   @keyframes pulse {
@@ -192,46 +264,6 @@ if (typeof window !== 'undefined') {
   require('leaflet/dist/leaflet.css');
 }
 
-interface MapProps {
-  showGrim: boolean;
-  onPlayerSelect: (player: any) => void;
-  specialZones?: SpecialZone[];
-}
-
-interface PlayerLocation {
-  id: string;
-  name: string;
-  avatar: string;
-  position: [number, number];
-  role: 'grim' | 'hunter';
-  isReady: boolean;
-  level: number;
-  gamesPlayed: number;
-  winRate: number;
-}
-
-interface PowerSpot {
-  id: string;
-  type: 'power' | 'bonus' | 'trap' | 'teleport';
-  position: [number, number];
-  name: string;
-  description: string;
-  icon: string;
-  availableIn: number; // Temps en secondes avant disponibilité
-  forRole?: 'grim' | 'hunter' | 'all';
-}
-
-interface SpecialZone {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  type: 'recharge' | 'cover' | 'surveillance' | 'bonus';
-  isActive: boolean;
-  nextAppearance: number;
-  position?: [number, number];
-}
-
 // Composant pour mettre à jour la position du joueur et la carte
 function LocationUpdater({ onPositionChange }: { onPositionChange: (pos: [number, number]) => void }) {
   const map = useMap();
@@ -288,162 +320,141 @@ function ZoomControl() {
   );
 }
 
-const Map = forwardRef<LeafletMap, MapProps>(({ showGrim, onPlayerSelect, specialZones: initialSpecialZones = [] }, ref) => {
+const Map = forwardRef<LeafletMap, MapProps>(({ 
+  showGrim, 
+  onPlayerSelect, 
+  specialZones: initialSpecialZones = [], 
+  isSpectator = false,
+  players: initialPlayers = [],
+  onToggleStream,
+  isStreaming = false 
+}, ref) => {
   const [isClient, setIsClient] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
   const [playerPosition, setPlayerPosition] = useState<[number, number]>([48.8566, 2.3522]);
   const [selectedPlayerForChat, setSelectedPlayerForChat] = useState<PlayerLocation | null>(null);
-  const [players, setPlayers] = useState<PlayerLocation[]>([
-    {
-      id: '1',
-      name: 'Grim',
-      avatar: '🎭',
-      position: [48.8566, 2.3522],
-      role: 'grim',
-      isReady: true,
-      level: 15,
-      gamesPlayed: 42,
-      winRate: 75
-    },
-    {
-      id: '2',
-      name: 'Alex',
-      avatar: '👤',
-      position: [48.8576, 2.3532],
-      role: 'hunter',
-      isReady: true,
-      level: 8,
-      gamesPlayed: 23,
-      winRate: 65
-    },
-    {
-      id: '3',
-      name: 'Marie',
-      avatar: '👤',
-      position: [48.8556, 2.3512],
-      role: 'hunter',
-      isReady: true,
-      level: 12,
-      gamesPlayed: 35,
-      winRate: 80
-    },
-    {
-      id: '4',
-      name: 'Lucas',
-      avatar: '👤',
-      position: [48.8586, 2.3542],
-      role: 'hunter',
-      isReady: true,
-      level: 10,
-      gamesPlayed: 28,
-      winRate: 70
-    }
-  ]);
-
-  const [powerSpots, setPowerSpots] = useState<PowerSpot[]>([
-    {
-      id: 'power1',
-      type: 'power',
-      position: [48.8576, 2.3542],
-      name: 'Zone Fantôme',
-      description: 'Invisibilité pendant 45 secondes',
-      icon: '👻',
-      availableIn: 0,
-      forRole: 'grim'
-    },
-    {
-      id: 'power2',
-      type: 'power',
-      position: [48.8556, 2.3502],
-      name: 'Super Radar',
-      description: 'Détection précise pendant 30 secondes',
-      icon: '🎯',
-      availableIn: 120,
-      forRole: 'hunter'
-    },
-    {
-      id: 'bonus1',
-      type: 'bonus',
-      position: [48.8586, 2.3522],
-      name: 'Bonus XP',
-      description: '+500 XP',
-      icon: '⭐',
-      availableIn: 0,
-      forRole: 'all'
-    },
-    {
-      id: 'trap1',
-      type: 'trap',
-      position: [48.8546, 2.3532],
-      name: 'Piège',
-      description: 'Ralentit les chasseurs pendant 20 secondes',
-      icon: '⚡',
-      availableIn: 60,
-      forRole: 'grim'
-    },
-    {
-      id: 'teleport1',
-      type: 'teleport',
-      position: [48.8566, 2.3502],
-      name: 'Téléporteur',
-      description: 'Téléportation vers un point aléatoire de la carte',
-      icon: '🌀',
-      availableIn: 180,
-      forRole: 'all'
-    }
-  ]);
-
   const [specialZones, setSpecialZones] = useState<SpecialZone[]>(initialSpecialZones);
-  const mapRef = useRef<LeafletMap>(null);
+  const [showVideoModal, setShowVideoModal] = useState<string | null>(null);
+  const [mapInstance, setMapInstance] = useState<LeafletMap | null>(null);
+  const [leafletInstance, setLeafletInstance] = useState<any>(null);
+  const [playersState, setPlayersState] = useState<PlayerLocation[]>(initialPlayers);
+
+  // Game zone definition
+  const gameZone = {
+    center: playerPosition,
+    radius: 1000 // 1km in meters
+  };
 
   useEffect(() => {
-    // Si une ref externe est fournie, on lui passe l'instance de la carte
-    if (ref && mapRef.current) {
-      (ref as React.MutableRefObject<LeafletMap>).current = mapRef.current;
+    setIsClient(true);
+    if (typeof window !== 'undefined') {
+      const L = require('leaflet');
+      require('leaflet/dist/leaflet.css');
+      
+      // Définir l'icône par défaut de Leaflet
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png').default,
+        iconUrl: require('leaflet/dist/images/marker-icon.png').default,
+        shadowUrl: require('leaflet/dist/images/marker-shadow.png').default,
+      });
+      
+      setLeafletInstance(L);
+      
+      // Add styles
+      const style = document.createElement('style');
+      style.textContent = markerStyle + specialZoneStyle;
+      style.id = 'map-custom-styles';
+      document.head.appendChild(style);
+
+      console.log("Leaflet initialized");
     }
-  }, [ref, mapRef.current]);
+
+    return () => {
+      const existingStyle = document.getElementById('map-custom-styles');
+      if (existingStyle) {
+        document.head.removeChild(existingStyle);
+      }
+    };
+  }, []);
+
+  // Update players when initialPlayers changes
+  useEffect(() => {
+    if (initialPlayers && initialPlayers.length > 0) {
+      console.log("Updating players state with:", initialPlayers);
+      setPlayersState(initialPlayers);
+    }
+  }, [initialPlayers]);
+
+  // Créer une icône personnalisée pour les joueurs
+  const createPlayerIcon = useCallback((player: PlayerLocation) => {
+    if (!leafletInstance) {
+      console.error("Leaflet instance not initialized");
+      return null;
+    }
+    
+    const validRoles = ['grim', 'hunter', 'illusionist', 'informer', 'saboteur'];
+    if (!validRoles.includes(player.role)) {
+      console.error("Invalid player role:", player.role);
+      return null;
+    }
+    
+    console.log("Creating icon for player:", player);
+    const markerHtml = `
+      <div class="marker-pin ${player.role}">
+        <span class="marker-avatar">${player.avatar}</span>
+        ${player.level ? `<span class="marker-level">Niv.${player.level}</span>` : ''}
+      </div>
+    `;
+    
+    try {
+      return leafletInstance.divIcon({
+        html: markerHtml,
+        className: 'custom-div-icon',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -20]
+      });
+    } catch (error) {
+      console.error("Error creating player icon:", error);
+      return null;
+    }
+  }, [leafletInstance]);
+
+  // Effet pour simuler le mouvement des joueurs
+  useEffect(() => {
+    if (!mapInstance || !playersState || playersState.length === 0) return;
+
+    const interval = setInterval(() => {
+      setPlayersState(prevPlayers => 
+        prevPlayers.map(player => ({
+          ...player,
+          position: [
+            player.position[0] + (Math.random() - 0.5) * 0.0005,
+            player.position[1] + (Math.random() - 0.5) * 0.0005
+          ]
+        }))
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [mapInstance, playersState]);
 
   const handlePositionChange = useCallback((newPosition: [number, number]) => {
     setPlayerPosition(newPosition);
-    
-    // Mettre à jour les positions des autres joueurs autour de la position actuelle
-    setPlayers(prev => prev.map(player => ({
-      ...player,
-      position: player.id === '1' ? newPosition : [
-        newPosition[0] + (Math.random() - 0.5) * 0.005, // Réduit la dispersion
-        newPosition[1] + (Math.random() - 0.5) * 0.005
-      ]
-    })));
   }, []);
 
   // Mettre à jour les temps de recharge des power spots
   useEffect(() => {
     const timer = setInterval(() => {
-      setPowerSpots(prev => prev.map(spot => ({
-        ...spot,
-        availableIn: Math.max(0, spot.availableIn - 1)
+      setPlayersState(prev => prev.map(player => ({
+        ...player,
+        powerCooldown: Math.max(0, player.powerCooldown ? player.powerCooldown - 1 : 0)
       })));
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
-
-  // Modifier la création des icônes personnalisées
-  const createCustomIcon = (player: PlayerLocation) => {
-    const markerHtml = `
-      <div class="marker-pin ${player.role === 'grim' ? 'grim' : 'hunter'}">
-        <span class="marker-avatar">${player.avatar}</span>
-        <span class="marker-level">Niv.${player.level}</span>
-      </div>
-    `;
-
-    return leafletInstance.divIcon({
-      html: markerHtml,
-      className: 'custom-div-icon',
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-      popupAnchor: [0, -20]
-    });
-  };
 
   // Créer une icône personnalisée pour les power spots
   const createPowerSpotIcon = (spot: PowerSpot) => {
@@ -480,42 +491,24 @@ const Map = forwardRef<LeafletMap, MapProps>(({ showGrim, onPlayerSelect, specia
     });
   };
 
-  // Zone de jeu
-  const gameZone = {
-    center: playerPosition,
-    radius: 1000 // 1km en mètres
-  };
-
-  // Générer des positions aléatoires pour les zones spéciales
   useEffect(() => {
-    if (initialSpecialZones.length > 0) {
-      setSpecialZones(initialSpecialZones.map(zone => ({
-        ...zone,
-        position: zone.position || [
-          playerPosition[0] + (Math.random() - 0.5) * 0.005,
-          playerPosition[1] + (Math.random() - 0.5) * 0.005
-        ]
-      })));
+    console.log("Initial players received:", initialPlayers);
+    if (initialPlayers && initialPlayers.length > 0) {
+      console.log("Number of players:", initialPlayers.length);
+      initialPlayers.forEach(player => {
+        console.log("Player data:", {
+          id: player.id,
+          name: player.name,
+          role: player.role,
+          position: player.position
+        });
+      });
+    } else {
+      console.log("No players received or empty players array");
     }
-  }, [playerPosition, initialSpecialZones]);
+  }, [initialPlayers]);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient) {
-      const style = document.createElement('style');
-      style.textContent = markerStyle + specialZoneStyle;
-      document.head.appendChild(style);
-
-      return () => {
-        document.head.removeChild(style);
-      };
-    }
-  }, [isClient]);
-
-  if (!isClient) {
+  if (!isClient || !leafletInstance) {
     return (
       <div className="h-[600px] bg-gray-900 animate-pulse rounded-2xl flex items-center justify-center">
         <div className="text-white text-xl">Chargement de la carte...</div>
@@ -523,16 +516,98 @@ const Map = forwardRef<LeafletMap, MapProps>(({ showGrim, onPlayerSelect, specia
     );
   }
 
+  console.log("Rendering Map component with players:", playersState);
+
   return (
     <div className="h-[600px] rounded-2xl overflow-hidden relative">
+      {/* Bouton de streaming (uniquement pour les joueurs) */}
+      {!isSpectator && onToggleStream && (
+        <>
+          <button
+            onClick={onToggleStream}
+            className={`absolute top-4 right-4 z-[999] px-4 py-2 rounded-full font-medium flex items-center gap-2 transition-all ${
+              isStreaming
+                ? 'bg-red-600 hover:bg-red-700 text-white'
+                : 'bg-purple-600 hover:bg-purple-700 text-white'
+            }`}
+          >
+            <span>{isStreaming ? '🔴' : '📹'}</span>
+            {isStreaming ? 'Arrêter' : 'Démarrer le direct'}
+          </button>
+
+          {/* Miniature vidéo */}
+          {isStreaming && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute bottom-4 right-4 z-[999] w-64 bg-gray-900 rounded-xl overflow-hidden shadow-lg"
+            >
+              <div className="relative aspect-video bg-black">
+                <div className="absolute top-2 left-2 flex items-center gap-2 bg-black/50 px-2 py-1 rounded-full text-xs">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  <span>EN DIRECT</span>
+                </div>
+              </div>
+              <div className="p-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span>Votre flux</span>
+                  <span className="text-gray-400">👁️ 0</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </>
+      )}
+
+      {/* Modal pour les flux vidéo */}
+      <AnimatePresence>
+        {showVideoModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1001] bg-black/80 flex items-center justify-center p-4"
+            onClick={() => setShowVideoModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-gray-900 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">Flux vidéo en direct</h3>
+                <button
+                  onClick={() => setShowVideoModal(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="aspect-video bg-black rounded-xl relative">
+                {/* Ici sera intégré le flux vidéo */}
+                <div className="absolute top-4 left-4 bg-red-600 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                  <span className="animate-pulse">●</span>
+                  EN DIRECT
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <MapContainerDynamic
         center={playerPosition}
         zoom={13}
         style={{ height: '600px', width: '100%', borderRadius: '1rem' }}
-        ref={mapRef}
+        ref={ref}
         whenReady={() => {
-          if (mapRef.current && ref) {
-            (ref as React.MutableRefObject<LeafletMap>).current = mapRef.current;
+          console.log("Map is ready");
+          if (ref && 'current' in ref) {
+            const map = (ref as any).current;
+            setMapInstance(map);
+            setIsMapReady(true);
           }
         }}
       >
@@ -544,201 +619,183 @@ const Map = forwardRef<LeafletMap, MapProps>(({ showGrim, onPlayerSelect, specia
           className="map-tiles"
         />
         
-        {/* Zone de jeu */}
-        <CircleDynamic
-          center={gameZone.center}
-          radius={gameZone.radius}
-          pathOptions={{
-            color: '#8b5cf6',
-            fillColor: '#8b5cf680',
-            fillOpacity: 0.2,
-            weight: 2
-          }}
-        />
+        {isMapReady && leafletInstance && (
+          <>
+            {/* Zone de jeu */}
+            <CircleDynamic
+              center={gameZone.center}
+              radius={gameZone.radius}
+              pathOptions={{
+                color: '#8b5cf6',
+                fillColor: '#8b5cf680',
+                fillOpacity: 0.2,
+                weight: 2
+              }}
+            />
 
-        {/* Marqueur de votre position */}
-        <MarkerDynamic
-          position={playerPosition}
-          icon={createCustomIcon({
-            id: 'you',
-            name: 'Vous',
-            avatar: '📍',
-            position: playerPosition,
-            role: 'hunter',
-            isReady: true,
-            level: 1,
-            gamesPlayed: 0,
-            winRate: 0
-          })}
-        >
-          <PopupDynamic>
-            <div className="text-center bg-gray-900 p-3 rounded-lg">
-              <div className="text-2xl mb-2">📍</div>
-              <div className="font-bold text-white">Votre position</div>
-            </div>
-          </PopupDynamic>
-        </MarkerDynamic>
+            {/* Marqueurs des joueurs */}
+            {playersState.map((player) => {
+              if (!player || !player.position) {
+                console.error("Invalid player data:", player);
+                return null;
+              }
 
-        {/* Marqueurs des autres joueurs */}
-        {players.map((player) => {
-          if (player.role === 'grim' && !showGrim) return null;
+              const icon = createPlayerIcon(player);
+              if (!icon) {
+                console.error("Failed to create icon for player:", player);
+                return null;
+              }
 
-          return (
-            <MarkerDynamic
-              key={player.id}
-              position={player.position}
-              icon={createCustomIcon(player)}
-              eventHandlers={{
-                click: () => {
-                  onPlayerSelect({
-                    id: player.id,
-                    name: player.name,
-                    avatar: player.avatar,
-                    role: player.role,
-                    description: `${player.role === 'grim' ? 'Grim' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
-                    stats: {
-                      gamesPlayed: player.gamesPlayed,
-                      winRate: player.winRate,
-                      level: player.level,
-                      xp: player.level * 1000
+              return (
+                <MarkerDynamic
+                  key={`${player.id}-${player.position[0]}-${player.position[1]}`}
+                  position={player.position}
+                  icon={icon}
+                  eventHandlers={{
+                    click: () => {
+                      if (onPlayerSelect) {
+                        onPlayerSelect(player);
+                      }
                     }
-                  });
-                }
-              }}
-            >
-              <PopupDynamic>
-                <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[250px]">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
-                      {player.avatar}
+                  }}
+                >
+                  <PopupDynamic>
+                    <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[250px]">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl
+                          ${player.role === 'grim' 
+                            ? 'bg-gradient-to-br from-purple-600 to-pink-600'
+                            : player.role === 'illusionist' ? 'bg-gradient-to-br from-pink-600 to-purple-600'
+                            : player.role === 'informer' ? 'bg-gradient-to-br from-cyan-600 to-blue-600'
+                            : player.role === 'saboteur' ? 'bg-gradient-to-br from-red-600 to-orange-600'
+                            : 'bg-gradient-to-br from-blue-600 to-cyan-600'
+                          }`}
+                        >
+                          {player.avatar}
+                        </div>
+                        <div className="text-left">
+                          <div className="font-bold text-white text-lg">{player.name}</div>
+                          <div className="text-purple-400">Niveau {player.level}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="bg-gray-800 p-2 rounded">
+                          <div className="text-sm text-gray-400">Santé</div>
+                          <div className="font-bold">{player.health}%</div>
+                        </div>
+                        <div className="bg-gray-800 p-2 rounded">
+                          <div className="text-sm text-gray-400">Endurance</div>
+                          <div className="font-bold">{player.stamina}%</div>
+                        </div>
+                      </div>
+
+                      {player.killCount !== undefined && (
+                        <div className="bg-gray-800 p-2 rounded mb-3">
+                          <div className="text-sm text-gray-400">Éliminations</div>
+                          <div className="font-bold">{player.killCount}</div>
+                        </div>
+                      )}
+
+                      {player.distanceTraveled !== undefined && (
+                        <div className="bg-gray-800 p-2 rounded mb-3">
+                          <div className="text-sm text-gray-400">Distance parcourue</div>
+                          <div className="font-bold">{player.distanceTraveled.toFixed(1)} km</div>
+                        </div>
+                      )}
+
+                      <div className="text-sm text-gray-300 mb-3">
+                        {player.role === 'grim' ? 'Grim' :
+                         player.role === 'illusionist' ? 'Illusionniste' :
+                         player.role === 'informer' ? 'Informateur' :
+                         player.role === 'saboteur' ? 'Saboteur' :
+                         'Chasseur'}
+                      </div>
+
+                      {player.lastAction && (
+                        <div className="bg-gray-800 p-2 rounded mb-3">
+                          <div className="text-sm text-gray-400">Dernière action</div>
+                          <div className="text-sm">{player.lastAction}</div>
+                        </div>
+                      )}
+
+                      {player.powerCooldown > 0 && (
+                        <div className="bg-gray-800 p-2 rounded mb-3">
+                          <div className="text-sm text-gray-400">Pouvoir disponible dans</div>
+                          <div className="text-sm">{Math.ceil(player.powerCooldown / 60)}min</div>
+                        </div>
+                      )}
+
+                      {player.isStreaming && (
+                        <div className="bg-purple-900/30 p-2 rounded mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="animate-pulse text-red-500">●</span>
+                            <span className="text-purple-400">En direct</span>
+                          </div>
+                          {player.streamDuration && (
+                            <div className="text-sm mt-1">
+                              Durée: {Math.floor(player.streamDuration)} minutes
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-2">
+                        <button 
+                          onClick={() => onPlayerSelect(player)}
+                          className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors w-full"
+                        >
+                          Voir profil complet
+                        </button>
+                        <button 
+                          onClick={() => setSelectedPlayerForChat(player)}
+                          className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600 transition-colors w-full"
+                        >
+                          Message privé
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <div className="font-bold text-white text-lg">{player.name}</div>
-                      <div className="text-purple-400">Niveau {player.level}</div>
+                  </PopupDynamic>
+                </MarkerDynamic>
+              );
+            })}
+
+            {/* Points d'intérêt */}
+            {/* Suppression de la section qui causait les erreurs */}
+
+            {/* Zones spéciales */}
+            {specialZones.map((zone) => (
+              zone.isActive && zone.position && (
+                <MarkerDynamic
+                  key={zone.id}
+                  position={zone.position}
+                  icon={createSpecialZoneIcon(zone)}
+                  eventHandlers={{
+                    add: (e) => {
+                      const element = e.target.getElement();
+                      if (element) {
+                        element.style.transition = 'none';
+                        element.style.transform = 'none';
+                      }
+                    }
+                  }}
+                >
+                  <PopupDynamic>
+                    <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
+                      <div className="text-2xl mb-2">{zone.icon}</div>
+                      <div className="font-bold text-white mb-1">{zone.name}</div>
+                      <div className="text-sm text-gray-300 mb-2">{zone.description}</div>
+                      <div className="text-xs text-purple-400">
+                        Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-gray-800 p-2 rounded">
-                      <div className="text-sm text-gray-400">Parties</div>
-                      <div className="font-bold">{player.gamesPlayed}</div>
-                    </div>
-                    <div className="bg-gray-800 p-2 rounded">
-                      <div className="text-sm text-gray-400">Victoires</div>
-                      <div className="font-bold">{player.winRate}%</div>
-                    </div>
-                  </div>
+                  </PopupDynamic>
+                </MarkerDynamic>
+              )
+            ))}
+          </>
+        )}
 
-                  <div className="text-sm text-gray-300 mb-3">
-                    {player.role === 'grim' ? 'Grim' : 'Chasseur'} expérimenté
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => onPlayerSelect({
-                        id: player.id,
-                        name: player.name,
-                        avatar: player.avatar,
-                        role: player.role,
-                        description: `${player.role === 'grim' ? 'Grim' : 'Chasseur'} expérimenté - Niveau ${player.level}`,
-                        stats: {
-                          gamesPlayed: player.gamesPlayed,
-                          winRate: player.winRate,
-                          level: player.level,
-                          xp: player.level * 1000
-                        }
-                      })}
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors w-full"
-                    >
-                      Voir profil complet
-                    </button>
-                    <button 
-                      onClick={() => setSelectedPlayerForChat(player)}
-                      className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600 transition-colors w-full"
-                    >
-                      Message privé
-                    </button>
-                  </div>
-                </div>
-              </PopupDynamic>
-            </MarkerDynamic>
-          );
-        })}
-
-        {/* Points d'intérêt */}
-        {powerSpots.map((spot) => (
-          <MarkerDynamic
-            key={spot.id}
-            position={spot.position}
-            icon={createPowerSpotIcon(spot)}
-          >
-            <PopupDynamic>
-              <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
-                <div className="text-2xl mb-2">{spot.icon}</div>
-                <div className="font-bold text-white mb-1">{spot.name}</div>
-                <div className="text-sm text-gray-300 mb-2">{spot.description}</div>
-                {spot.forRole !== 'all' && (
-                  <div className="text-xs text-purple-400 mb-2">
-                    Exclusif {spot.forRole === 'grim' ? 'au Grim' : 'aux Chasseurs'}
-                  </div>
-                )}
-                {spot.availableIn > 0 ? (
-                  <div className="text-sm text-gray-400">
-                    Disponible dans {Math.floor(spot.availableIn / 60)}:{(spot.availableIn % 60).toString().padStart(2, '0')}
-                  </div>
-                ) : (
-                  <button 
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors w-full"
-                    onClick={() => {
-                      // Logique pour activer le power-up
-                      setPowerSpots(prev => prev.map(s => 
-                        s.id === spot.id 
-                          ? { ...s, availableIn: s.type === 'bonus' ? 300 : 600 }
-                          : s
-                      ));
-                    }}
-                  >
-                    Activer
-                  </button>
-                )}
-              </div>
-            </PopupDynamic>
-          </MarkerDynamic>
-        ))}
-
-        {/* Zones spéciales */}
-        {specialZones.map((zone) => (
-          zone.isActive && zone.position && (
-            <MarkerDynamic
-              key={zone.id}
-              position={zone.position}
-              icon={createSpecialZoneIcon(zone)}
-              eventHandlers={{
-                add: (e) => {
-                  // Désactiver les animations Leaflet par défaut
-                  const element = e.target.getElement();
-                  if (element) {
-                    element.style.transition = 'none';
-                    element.style.transform = 'none';
-                  }
-                }
-              }}
-            >
-              <PopupDynamic>
-                <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
-                  <div className="text-2xl mb-2">{zone.icon}</div>
-                  <div className="font-bold text-white mb-1">{zone.name}</div>
-                  <div className="text-sm text-gray-300 mb-2">{zone.description}</div>
-                  <div className="text-xs text-purple-400">
-                    Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
-                  </div>
-                </div>
-              </PopupDynamic>
-            </MarkerDynamic>
-          )
-        ))}
-
-        {/* Remplacer les boutons de zoom existants par le composant ZoomControl */}
         <ZoomControl />
       </MapContainerDynamic>
 

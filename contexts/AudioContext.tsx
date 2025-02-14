@@ -5,6 +5,8 @@ interface AudioContextType {
   audioVolume: number;
   toggleMusic: () => Promise<void>;
   adjustVolume: (volume: number) => void;
+  hasUserInteracted: boolean;
+  setHasUserInteracted: (value: boolean) => void;
 }
 
 const AudioContext = createContext<AudioContextType | null>(null);
@@ -13,6 +15,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.3);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   useEffect(() => {
     const audio = new Audio('/sounds/ambient.mp3');
@@ -29,10 +32,22 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Ajouter un gestionnaire d'événements pour détecter l'interaction utilisateur
+    const handleUserInteraction = () => {
+      setHasUserInteracted(true);
+    };
+
+    window.addEventListener('click', handleUserInteraction);
+    window.addEventListener('keydown', handleUserInteraction);
+    window.addEventListener('touchstart', handleUserInteraction);
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+      window.removeEventListener('touchstart', handleUserInteraction);
     };
   }, []);
 
@@ -41,6 +56,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       if (!audioRef.current) return;
 
       if (!isMusicPlaying) {
+        if (!hasUserInteracted) {
+          console.log('En attente de l\'interaction utilisateur pour démarrer la musique');
+          return;
+        }
         await audioRef.current.play();
         setIsMusicPlaying(true);
       } else {
@@ -48,7 +67,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setIsMusicPlaying(false);
       }
     } catch (error) {
-      console.error('Erreur audio:', error);
+      console.log('Erreur lors de la lecture audio:', error);
     }
   };
 
@@ -61,7 +80,14 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AudioContext.Provider value={{ isMusicPlaying, audioVolume, toggleMusic, adjustVolume }}>
+    <AudioContext.Provider value={{ 
+      isMusicPlaying, 
+      audioVolume, 
+      toggleMusic, 
+      adjustVolume,
+      hasUserInteracted,
+      setHasUserInteracted
+    }}>
       {children}
     </AudioContext.Provider>
   );

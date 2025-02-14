@@ -5,7 +5,7 @@ interface Player {
   id: string;
   name: string;
   avatar: string;
-  role: 'grim' | 'hunter';
+  role: 'grim' | 'hunter' | 'illusionist' | 'informer' | 'saboteur';
 }
 
 interface TalkieWalkieProps {
