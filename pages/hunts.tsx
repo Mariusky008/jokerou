@@ -599,7 +599,15 @@ export default function Hunts() {
       <div className="fixed bottom-4 left-4 z-50">
         <div className="bg-gray-900/90 rounded-full shadow-lg p-4 flex items-center gap-4">
           <button
-            onClick={toggleMusic}
+            onClick={async () => {
+              await toggleMusic();
+              if (!isMusicPlaying) {
+                setNotification({
+                  message: 'Musique activée',
+                  type: 'success'
+                });
+              }
+            }}
             className="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center transition-all duration-300 group relative"
             title={isMusicPlaying ? "Couper la musique" : "Jouer la musique"}
           >
@@ -654,9 +662,41 @@ export default function Hunts() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">
             Chasses disponibles
           </h1>
-          
+
+          {/* Menu desktop */}
+          <div className="hidden lg:flex items-center gap-4">
+            <button
+              onClick={() => setShowRules(true)}
+              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <span>📜</span>
+              Règles du jeu
+            </button>
+            <Link
+              href="/leaderboards"
+              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <span>🏆</span>
+              Classements
+            </Link>
+            <Link
+              href="/profile"
+              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <span>👤</span>
+              Mon profil
+            </Link>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <span>➕</span>
+              Créer une chasse
+            </button>
+          </div>
+
           {/* Menu hamburger pour mobile */}
-          <div className="block lg:hidden relative">
+          <div className="block lg:hidden">
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="bg-gray-800 p-3 rounded-lg hover:bg-gray-700 transition-colors"
@@ -665,78 +705,62 @@ export default function Hunts() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-
-            {/* Menu mobile */}
-            <AnimatePresence>
-              {showMobileMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="absolute right-0 mt-2 w-56 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
-                >
-                  <div className="p-2 space-y-2">
-                    <button
-                      onClick={() => {
-                        setShowRules(true);
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-                    >
-                      <span>📜</span>
-                      Règles du jeu
-                    </button>
-
-                    <Link
-                      href="/profile"
-                      onClick={() => setShowMobileMenu(false)}
-                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-                    >
-                      <span>👤</span>
-                      Mon profil
-                    </Link>
-
-                    <button
-                      onClick={() => {
-                        setShowCreateModal(true);
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-                    >
-                      <span>🎯</span>
-                      Créer une chasse
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Menu desktop */}
-          <div className="hidden lg:flex items-center gap-4">
-            <button
-              onClick={() => setShowRules(true)}
-              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
-            >
-              <span>📜</span>
-              Règles du jeu
-            </button>
-            <Link
-              href="/profile"
-              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
-            >
-              <span>👤</span>
-              Mon profil
-            </Link>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 flex items-center gap-2"
-            >
-              <span>🎯</span>
-              Créer une chasse
-            </button>
           </div>
         </div>
+
+        {/* Menu mobile */}
+        <AnimatePresence>
+          {showMobileMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="lg:hidden absolute right-4 mt-2 w-56 bg-gray-800 rounded-xl shadow-lg border border-purple-500/20 z-50"
+            >
+              <div className="p-2 space-y-2">
+                <button
+                  onClick={() => {
+                    setShowRules(true);
+                    setShowMobileMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                >
+                  <span>📜</span>
+                  Règles du jeu
+                </button>
+
+                <Link
+                  href="/leaderboards"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                >
+                  <span>🏆</span>
+                  Classements
+                </Link>
+
+                <Link
+                  href="/profile"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                >
+                  <span>👤</span>
+                  Mon profil
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setShowCreateModal(true);
+                    setShowMobileMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                >
+                  <span>➕</span>
+                  Créer une chasse
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Liste des chasses */}
         <div className="grid gap-6">

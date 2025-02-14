@@ -406,15 +406,15 @@ const Map = forwardRef<LeafletMap, MapProps>(({
         ${player.level ? `<span class="marker-level">Niv.${player.level}</span>` : ''}
       </div>
     `;
-    
+
     try {
-      return leafletInstance.divIcon({
-        html: markerHtml,
-        className: 'custom-div-icon',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-        popupAnchor: [0, -20]
-      });
+    return leafletInstance.divIcon({
+      html: markerHtml,
+      className: 'custom-div-icon',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20]
+    });
     } catch (error) {
       console.error("Error creating player icon:", error);
       return null;
@@ -621,17 +621,17 @@ const Map = forwardRef<LeafletMap, MapProps>(({
         
         {isMapReady && leafletInstance && (
           <>
-            {/* Zone de jeu */}
-            <CircleDynamic
-              center={gameZone.center}
-              radius={gameZone.radius}
-              pathOptions={{
-                color: '#8b5cf6',
-                fillColor: '#8b5cf680',
-                fillOpacity: 0.2,
-                weight: 2
-              }}
-            />
+        {/* Zone de jeu */}
+        <CircleDynamic
+          center={gameZone.center}
+          radius={gameZone.radius}
+          pathOptions={{
+            color: '#8b5cf6',
+            fillColor: '#8b5cf680',
+            fillOpacity: 0.2,
+            weight: 2
+          }}
+        />
 
             {/* Marqueurs des joueurs */}
             {playersState.map((player) => {
@@ -646,153 +646,153 @@ const Map = forwardRef<LeafletMap, MapProps>(({
                 return null;
               }
 
-              return (
-                <MarkerDynamic
+          return (
+            <MarkerDynamic
                   key={`${player.id}-${player.position[0]}-${player.position[1]}`}
-                  position={player.position}
+              position={player.position}
                   icon={icon}
-                  eventHandlers={{
-                    click: () => {
+              eventHandlers={{
+                click: () => {
                       if (onPlayerSelect) {
                         onPlayerSelect(player);
                       }
-                    }
-                  }}
-                >
-                  <PopupDynamic>
-                    <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[250px]">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl
-                          ${player.role === 'grim' 
-                            ? 'bg-gradient-to-br from-purple-600 to-pink-600'
-                            : player.role === 'illusionist' ? 'bg-gradient-to-br from-pink-600 to-purple-600'
-                            : player.role === 'informer' ? 'bg-gradient-to-br from-cyan-600 to-blue-600'
-                            : player.role === 'saboteur' ? 'bg-gradient-to-br from-red-600 to-orange-600'
-                            : 'bg-gradient-to-br from-blue-600 to-cyan-600'
-                          }`}
-                        >
-                          {player.avatar}
-                        </div>
-                        <div className="text-left">
-                          <div className="font-bold text-white text-lg">{player.name}</div>
-                          <div className="text-purple-400">Niveau {player.level}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="bg-gray-800 p-2 rounded">
-                          <div className="text-sm text-gray-400">Santé</div>
-                          <div className="font-bold">{player.health}%</div>
-                        </div>
-                        <div className="bg-gray-800 p-2 rounded">
-                          <div className="text-sm text-gray-400">Endurance</div>
-                          <div className="font-bold">{player.stamina}%</div>
-                        </div>
-                      </div>
-
-                      {player.killCount !== undefined && (
-                        <div className="bg-gray-800 p-2 rounded mb-3">
-                          <div className="text-sm text-gray-400">Éliminations</div>
-                          <div className="font-bold">{player.killCount}</div>
-                        </div>
-                      )}
-
-                      {player.distanceTraveled !== undefined && (
-                        <div className="bg-gray-800 p-2 rounded mb-3">
-                          <div className="text-sm text-gray-400">Distance parcourue</div>
-                          <div className="font-bold">{player.distanceTraveled.toFixed(1)} km</div>
-                        </div>
-                      )}
-
-                      <div className="text-sm text-gray-300 mb-3">
-                        {player.role === 'grim' ? 'Grim' :
-                         player.role === 'illusionist' ? 'Illusionniste' :
-                         player.role === 'informer' ? 'Informateur' :
-                         player.role === 'saboteur' ? 'Saboteur' :
-                         'Chasseur'}
-                      </div>
-
-                      {player.lastAction && (
-                        <div className="bg-gray-800 p-2 rounded mb-3">
-                          <div className="text-sm text-gray-400">Dernière action</div>
-                          <div className="text-sm">{player.lastAction}</div>
-                        </div>
-                      )}
-
-                      {player.powerCooldown > 0 && (
-                        <div className="bg-gray-800 p-2 rounded mb-3">
-                          <div className="text-sm text-gray-400">Pouvoir disponible dans</div>
-                          <div className="text-sm">{Math.ceil(player.powerCooldown / 60)}min</div>
-                        </div>
-                      )}
-
-                      {player.isStreaming && (
-                        <div className="bg-purple-900/30 p-2 rounded mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="animate-pulse text-red-500">●</span>
-                            <span className="text-purple-400">En direct</span>
-                          </div>
-                          {player.streamDuration && (
-                            <div className="text-sm mt-1">
-                              Durée: {Math.floor(player.streamDuration)} minutes
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex flex-col gap-2">
-                        <button 
-                          onClick={() => onPlayerSelect(player)}
-                          className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors w-full"
-                        >
-                          Voir profil complet
-                        </button>
-                        <button 
-                          onClick={() => setSelectedPlayerForChat(player)}
-                          className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600 transition-colors w-full"
-                        >
-                          Message privé
-                        </button>
-                      </div>
+                }
+              }}
+            >
+              <PopupDynamic>
+                <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[250px]">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl
+                      ${player.role === 'grim' 
+                        ? 'bg-gradient-to-br from-purple-600 to-pink-600'
+                        : player.role === 'illusionist' ? 'bg-gradient-to-br from-pink-600 to-purple-600'
+                        : player.role === 'informer' ? 'bg-gradient-to-br from-cyan-600 to-blue-600'
+                        : player.role === 'saboteur' ? 'bg-gradient-to-br from-red-600 to-orange-600'
+                        : 'bg-gradient-to-br from-blue-600 to-cyan-600'
+                      }`}
+                    >
+                      {player.avatar}
                     </div>
-                  </PopupDynamic>
-                </MarkerDynamic>
-              );
-            })}
+                    <div className="text-left">
+                      <div className="font-bold text-white text-lg">{player.name}</div>
+                      <div className="text-purple-400">Niveau {player.level}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="bg-gray-800 p-2 rounded">
+                      <div className="text-sm text-gray-400">Santé</div>
+                      <div className="font-bold">{player.health}%</div>
+                    </div>
+                    <div className="bg-gray-800 p-2 rounded">
+                      <div className="text-sm text-gray-400">Endurance</div>
+                      <div className="font-bold">{player.stamina}%</div>
+                    </div>
+                  </div>
 
-            {/* Points d'intérêt */}
+                  {player.killCount !== undefined && (
+                    <div className="bg-gray-800 p-2 rounded mb-3">
+                      <div className="text-sm text-gray-400">Éliminations</div>
+                      <div className="font-bold">{player.killCount}</div>
+                    </div>
+                  )}
+
+                  {player.distanceTraveled !== undefined && (
+                    <div className="bg-gray-800 p-2 rounded mb-3">
+                      <div className="text-sm text-gray-400">Distance parcourue</div>
+                      <div className="font-bold">{player.distanceTraveled.toFixed(1)} km</div>
+                    </div>
+                  )}
+
+                  <div className="text-sm text-gray-300 mb-3">
+                    {player.role === 'grim' ? 'Grim' :
+                     player.role === 'illusionist' ? 'Illusionniste' :
+                     player.role === 'informer' ? 'Informateur' :
+                     player.role === 'saboteur' ? 'Saboteur' :
+                     'Chasseur'}
+                  </div>
+
+                  {player.lastAction && (
+                    <div className="bg-gray-800 p-2 rounded mb-3">
+                      <div className="text-sm text-gray-400">Dernière action</div>
+                      <div className="text-sm">{player.lastAction}</div>
+                    </div>
+                  )}
+
+                  {player.powerCooldown > 0 && (
+                    <div className="bg-gray-800 p-2 rounded mb-3">
+                      <div className="text-sm text-gray-400">Pouvoir disponible dans</div>
+                      <div className="text-sm">{Math.ceil(player.powerCooldown / 60)}min</div>
+                    </div>
+                  )}
+
+                  {player.isStreaming && (
+                    <div className="bg-purple-900/30 p-2 rounded mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="animate-pulse text-red-500">●</span>
+                        <span className="text-purple-400">En direct</span>
+                      </div>
+                      {player.streamDuration && (
+                        <div className="text-sm mt-1">
+                          Durée: {Math.floor(player.streamDuration)} minutes
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2">
+                    <button 
+                      onClick={() => onPlayerSelect(player)}
+                      className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors w-full"
+                    >
+                      Voir profil complet
+                    </button>
+                    <button 
+                      onClick={() => setSelectedPlayerForChat(player)}
+                      className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600 transition-colors w-full"
+                    >
+                      Message privé
+                    </button>
+                  </div>
+                </div>
+              </PopupDynamic>
+            </MarkerDynamic>
+          );
+        })}
+
+        {/* Points d'intérêt */}
             {/* Suppression de la section qui causait les erreurs */}
 
-            {/* Zones spéciales */}
-            {specialZones.map((zone) => (
-              zone.isActive && zone.position && (
-                <MarkerDynamic
-                  key={zone.id}
-                  position={zone.position}
-                  icon={createSpecialZoneIcon(zone)}
-                  eventHandlers={{
-                    add: (e) => {
-                      const element = e.target.getElement();
-                      if (element) {
-                        element.style.transition = 'none';
-                        element.style.transform = 'none';
-                      }
-                    }
-                  }}
-                >
-                  <PopupDynamic>
-                    <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
-                      <div className="text-2xl mb-2">{zone.icon}</div>
-                      <div className="font-bold text-white mb-1">{zone.name}</div>
-                      <div className="text-sm text-gray-300 mb-2">{zone.description}</div>
-                      <div className="text-xs text-purple-400">
-                        Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
-                      </div>
-                    </div>
-                  </PopupDynamic>
-                </MarkerDynamic>
-              )
-            ))}
+        {/* Zones spéciales */}
+        {specialZones.map((zone) => (
+          zone.isActive && zone.position && (
+            <MarkerDynamic
+              key={zone.id}
+              position={zone.position}
+              icon={createSpecialZoneIcon(zone)}
+              eventHandlers={{
+                add: (e) => {
+                  const element = e.target.getElement();
+                  if (element) {
+                    element.style.transition = 'none';
+                    element.style.transform = 'none';
+                  }
+                }
+              }}
+            >
+              <PopupDynamic>
+                <div className="text-center bg-gray-900 p-4 rounded-lg min-w-[200px]">
+                  <div className="text-2xl mb-2">{zone.icon}</div>
+                  <div className="font-bold text-white mb-1">{zone.name}</div>
+                  <div className="text-sm text-gray-300 mb-2">{zone.description}</div>
+                  <div className="text-xs text-purple-400">
+                    Active pendant: {Math.floor(zone.nextAppearance / 60)}:{(zone.nextAppearance % 60).toString().padStart(2, '0')}
+                  </div>
+                </div>
+              </PopupDynamic>
+            </MarkerDynamic>
+          )
+        ))}
           </>
         )}
 
