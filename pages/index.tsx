@@ -569,7 +569,7 @@ export default function Home() {
               >
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                 <Link href="/auth" 
-                  className="relative w-full inline-block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xl py-5 px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-center"
+                  className="relative w-full inline-block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-base sm:text-xl py-3 sm:py-5 px-6 sm:px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-purple-500/50 text-center"
                   onMouseEnter={() => setIsHovering(true)}
                   onMouseLeave={() => setIsHovering(false)}
                 >
@@ -585,7 +585,7 @@ export default function Home() {
               >
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                 <Link href="/spectate" 
-                  className="relative w-full inline-block bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xl py-5 px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-blue-500/50 text-center flex items-center justify-center gap-3"
+                  className="relative w-full inline-block bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-base sm:text-xl py-3 sm:py-5 px-6 sm:px-12 rounded-full transition-all duration-300 shadow-lg hover:shadow-blue-500/50 text-center flex items-center justify-center gap-3"
                 >
                   <span>👁️</span>
                   Regarder une partie en direct
@@ -611,15 +611,26 @@ export default function Home() {
             Comment ça marche ?
           </motion.h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="relative"
+              className="relative group"
             >
-              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
-                <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">1</div>
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/50 to-indigo-600/50 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+              <div className="relative bg-gray-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full overflow-hidden">
+                <div className="absolute -top-2 -left-2 w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-2xl font-bold z-10 shadow-lg border-2 border-purple-400">1</div>
+                <div className="relative h-48 mb-6 rounded-xl overflow-hidden group-hover:transform group-hover:scale-105 transition-all duration-500">
+                  <Image
+                    src="/images/signup.jpg"
+                    alt="Création de compte"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
+                </div>
                 <h3 className="text-xl font-bold mb-4 mt-4">Créez votre compte</h3>
                 <p className="text-gray-400">Rejoignez la communauté GRIM et préparez-vous à vivre une expérience de jeu unique en plein air. Quelques clics suffisent pour commencer l'aventure.</p>
               </div>
@@ -630,10 +641,21 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="relative"
+              className="relative group"
             >
-              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
-                <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">2</div>
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/50 to-indigo-600/50 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+              <div className="relative bg-gray-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full overflow-hidden">
+                <div className="absolute -top-2 -left-2 w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-2xl font-bold z-10 shadow-lg border-2 border-purple-400">2</div>
+                <div className="relative h-48 mb-6 rounded-xl overflow-hidden group-hover:transform group-hover:scale-105 transition-all duration-500">
+                  <Image
+                    src="/images/choose-game.jpg"
+                    alt="Choix de partie"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
+                </div>
                 <h3 className="text-xl font-bold mb-4 mt-4">Choisissez votre partie</h3>
                 <p className="text-gray-400">Consultez les créneaux disponibles dans votre ville et rejoignez une partie ou créez en une. 
                   Découvrez votre rôle mystère : serez-vous le GRIM ou l'un des Chasseurs ?</p>
@@ -645,10 +667,21 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
-              className="relative"
+              className="relative group"
             >
-              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
-                <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">3</div>
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/50 to-indigo-600/50 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+              <div className="relative bg-gray-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full overflow-hidden">
+                <div className="absolute -top-2 -left-2 w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-2xl font-bold z-10 shadow-lg border-2 border-purple-400">3</div>
+                <div className="relative h-48 mb-6 rounded-xl overflow-hidden group-hover:transform group-hover:scale-105 transition-all duration-500">
+                  <Image
+                    src="/images/chase.jpg"
+                    alt="Lancement de la chasse"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
+                </div>
                 <h3 className="text-xl font-bold mb-4 mt-4">Lancez la chasse</h3>
                 <p className="text-gray-400">Au signal de départ, la partie de 60 minutes commence ! Les Chasseurs partent à la recherche du GRIM qui doit leur échapper dans les rues de la ville.</p>
               </div>
@@ -659,10 +692,21 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
-              className="relative"
+              className="relative group"
             >
-              <div className="bg-gradient-to-br from-gray-900/90 to-purple-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full">
-                <div className="absolute -top-4 -left-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-2xl font-bold">4</div>
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/50 to-indigo-600/50 opacity-0 group-hover:opacity-100 transition-all duration-500 blur-xl"></div>
+              <div className="relative bg-gray-900/90 p-8 rounded-2xl backdrop-blur-sm border border-purple-500/20 h-full overflow-hidden">
+                <div className="absolute -top-2 -left-2 w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-2xl font-bold z-10 shadow-lg border-2 border-purple-400">4</div>
+                <div className="relative h-48 mb-6 rounded-xl overflow-hidden group-hover:transform group-hover:scale-105 transition-all duration-500">
+                  <Image
+                    src="/images/powers.jpg"
+                    alt="Utilisation des pouvoirs"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent"></div>
+                </div>
                 <h3 className="text-xl font-bold mb-4 mt-4">Utilisez vos pouvoirs</h3>
                 <p className="text-gray-400">Déployez des capacités spéciales, coordonnez-vous avec votre équipe via le talkie-walkie et exploitez les zones stratégiques pour remporter la victoire !</p>
               </div>
